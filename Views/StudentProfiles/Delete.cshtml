@@ -1,0 +1,11 @@
+@{
+    Layout = null;
+}
+@model CampusConnect.Models.StudentProfile
+<h1>Delete Student Profile?</h1>
+<p>@Model.RollNumber — @Model.Department?.DepartmentName</p>
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="ProfileId" />
+    <button type="submit">Confirm Delete</button>
+    <a asp-action="Index">Cancel</a>
+</form>

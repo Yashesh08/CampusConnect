@@ -1,0 +1,12 @@
+@model CampusConnect.Models.Department
+@{
+    ViewData["Title"] = "Delete Department";
+}
+<h1 class="h3 text-danger">Delete Department?</h1>
+<p class="lead">@Model.DepartmentCode — @Model.DepartmentName</p>
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="DepartmentId" />
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+    <a class="btn btn-secondary ms-2" asp-action="Index">Cancel</a>
+</form>

@@ -1,0 +1,16 @@
+@{
+    Layout = null;
+}
+@model CampusConnect.Models.StudentProfile
+<h1>Edit Student Profile</h1>
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="ProfileId" />
+    <label>Roll Number</label> <input asp-for="RollNumber" /><br />
+    <label>Department</label> <select asp-for="DepartmentId" asp-items="@(ViewBag.Departments as SelectList)"></select><br />
+    <label>Batch Year</label> <input asp-for="BatchYear" type="number" /><br />
+    <label>Bio</label> <input asp-for="Bio" /><br />
+    <label>GitHub URL</label> <input asp-for="GitHubUrl" /><br />
+    <label>LinkedIn URL</label> <input asp-for="LinkedInUrl" /><br />
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>

@@ -1,0 +1,20 @@
+@{
+    Layout = null;
+}
+@model List<CampusConnect.Models.StudentProfile>
+<h1>Student Profiles</h1>
+<a asp-action="Create">+ New Profile</a>
+<table>
+    <tr><th>Roll</th><th>Department</th><th>Batch</th><th></th></tr>
+@foreach(var p in Model) {
+    <tr>
+        <td>@p.RollNumber</td>
+        <td>@p.Department?.DepartmentName</td>
+        <td>@p.BatchYear</td>
+        <td>
+            <a asp-action="Edit" asp-route-id="@p.ProfileId">Edit</a> |
+            <a asp-action="Delete" asp-route-id="@p.ProfileId">Delete</a>
+        </td>
+    </tr>
+}
+</table>

@@ -1,0 +1,11 @@
+@{
+    Layout = null;
+}
+@model CampusConnect.Models.Skill
+<h1>New Skill</h1>
+<form asp-action="Create" method="post">
+    <label>Name</label> <input asp-for="SkillName" /><br />
+    <label>Category</label> <input asp-for="Category" /><br />
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>

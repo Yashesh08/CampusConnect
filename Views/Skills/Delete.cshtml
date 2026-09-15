@@ -1,0 +1,11 @@
+@{
+    Layout = null;
+}
+@model CampusConnect.Models.Skill
+<h1>Delete Skill?</h1>
+<p>@Model.Category — @Model.SkillName</p>
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="SkillId" />
+    <button type="submit">Confirm Delete</button>
+    <a asp-action="Index">Cancel</a>
+</form>

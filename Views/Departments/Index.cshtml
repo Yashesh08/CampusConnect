@@ -1,0 +1,26 @@
+@model List<CampusConnect.Models.Department>
+@{
+    ViewData["Title"] = "Departments";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Departments</h1>
+    <a class="btn btn-primary" asp-action="Create">+ New Department</a>
+</div>
+<table class="table table-striped">
+    <thead>
+        <tr><th>Code</th><th>Name</th><th></th></tr>
+    </thead>
+    <tbody>
+    @foreach (var d in Model)
+    {
+        <tr>
+            <td>@d.DepartmentCode</td>
+            <td>@d.DepartmentName</td>
+            <td>
+                <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@d.DepartmentId">Edit</a>
+                <a class="btn btn-sm btn-outline-danger ms-2" asp-action="Delete" asp-route-id="@d.DepartmentId">Delete</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
