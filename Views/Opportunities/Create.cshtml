@@ -1,0 +1,115 @@
+@model CampusConnect.Models.ViewModels.CreateOpportunityViewModel
+
+@{
+    ViewData["Title"] = "Post New Opportunity";
+    var departments = ViewBag.Departments as IEnumerable<CampusConnect.Models.Department> ?? new List<CampusConnect.Models.Department>();
+    var skills = ViewBag.Skills as IEnumerable<CampusConnect.Models.Skill> ?? new List<CampusConnect.Models.Skill>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm p-4">
+            <h2 class="fw-bold mb-1">Post a New Opportunity</h2>
+            <p class="text-muted mb-4">Fill out the details below. Once created, it will be sent to Admin/HOD for approval before publishing.</p>
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold">Title *</label>
+                    <input asp-for="Title" class="form-control" placeholder="e.g. AI Research Assistant, Spring Hackathon 2024" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">Detailed Description *</label>
+                    <textarea asp-for="Description" class="form-control" rows="5" placeholder="Describe eligibility, responsibilities, timeline, and expectations..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Category" class="form-label fw-semibold">Category *</label>
+                        <select asp-for="Category" class="form-select">
+                            @foreach (var cat in Enum.GetValues<CampusConnect.Models.Enums.OpportunityCategory>())
+                            {
+                                <option value="@cat">@cat</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="WorkMode" class="form-label fw-semibold">Work Mode *</label>
+                        <select asp-for="WorkMode" class="form-select">
+                            @foreach (var mode in Enum.GetValues<CampusConnect.Models.Enums.WorkMode>())
+                            {
+                                <option value="@mode">@mode</option>
+                            }
+                        </select>
+                        <span asp-validation-for="WorkMode" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="TargetDepartmentId" class="form-label fw-semibold">Target Department (Optional)</label>
+                        <select asp-for="TargetDepartmentId" class="form-select">
+                            <option value="">All Departments (Open to All)</option>
+                            @foreach (var dept in departments)
+                            {
+                                <option value="@dept.DepartmentId">@dept.DepartmentName (@dept.DepartmentCode)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="StipendSalary" class="form-label fw-semibold">Stipend / Perks / Salary</label>
+                        <input asp-for="StipendSalary" class="form-control" placeholder="e.g. $500/mo, Certificate, Volunteer" />
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label asp-for="RegistrationDeadline" class="form-label fw-semibold">Registration Deadline *</label>
+                        <input asp-for="RegistrationDeadline" type="date" class="form-control" />
+                        <span asp-validation-for="RegistrationDeadline" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="EventDate" class="form-label fw-semibold">Event Date (Optional)</label>
+                        <input asp-for="EventDate" type="date" class="form-control" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Capacity" class="form-label fw-semibold">Capacity (Optional)</label>
+                        <input asp-for="Capacity" type="number" class="form-control" placeholder="Max applicants" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold d-block">Select Required Skills</label>
+                    <div class="row row-cols-2 row-cols-md-3 g-2 p-3 bg-light rounded border">
+                        @foreach (var skill in skills)
+                        {
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="SelectedSkillIds" value="@skill.SkillId" id="skill_@skill.SkillId">
+                                    <label class="form-check-label text-dark" for="skill_@skill.SkillId">
+                                        @skill.SkillName
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-5 shadow-sm">Submit Opportunity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
