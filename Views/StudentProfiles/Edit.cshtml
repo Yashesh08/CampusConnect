@@ -1,16 +1,92 @@
+@model CampusConnect.Models.ViewModels.StudentProfileViewModel
 @{
-    Layout = null;
+    ViewData["Title"] = "Edit Profile";
+    var completionScore = ViewBag.CompletionScore ?? 0;
 }
-@model CampusConnect.Models.StudentProfile
-<h1>Edit Student Profile</h1>
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="ProfileId" />
-    <label>Roll Number</label> <input asp-for="RollNumber" /><br />
-    <label>Department</label> <select asp-for="DepartmentId" asp-items="@(ViewBag.Departments as SelectList)"></select><br />
-    <label>Batch Year</label> <input asp-for="BatchYear" type="number" /><br />
-    <label>Bio</label> <input asp-for="Bio" /><br />
-    <label>GitHub URL</label> <input asp-for="GitHubUrl" /><br />
-    <label>LinkedIn URL</label> <input asp-for="LinkedInUrl" /><br />
-    <button type="submit">Save</button>
-    <a asp-action="Index">Cancel</a>
-</form>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card-page">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>✏️ Edit Your Profile</h3>
+                    <div class="text-end">
+                        <span class="badge bg-@(completionScore == 100 ? "success" : "warning") fs-6">
+                            Profile Completion: @completionScore%
+                        </span>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-@(completionScore == 100 ? "success" : "warning")" role="progressbar" style="width: @completionScore%" aria-valuenow="@completionScore" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="ProfileId" />
+                    <input type="hidden" asp-for="ExistingResumeUrl" />
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="RollNumber" class="form-label"></label>
+                            <input asp-for="RollNumber" class="form-control" />
+                            <span asp-validation-for="RollNumber" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label asp-for="BatchYear" class="form-label"></label>
+                            <input asp-for="BatchYear" class="form-control" />
+                            <span asp-validation-for="BatchYear" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="DepartmentId" class="form-label"></label>
+                            <select asp-for="DepartmentId" class="form-select" asp-items="@(ViewBag.Departments as SelectList)">
+                                <option value="">-- Select Department --</option>
+                            </select>
+                            <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="Bio" class="form-label"></label>
+                            <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
+                            <span asp-validation-for="Bio" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="GitHubUrl" class="form-label"></label>
+                            <input asp-for="GitHubUrl" class="form-control" placeholder="https://github.com/yourusername" />
+                            <span asp-validation-for="GitHubUrl" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label asp-for="LinkedInUrl" class="form-label"></label>
+                            <input asp-for="LinkedInUrl" class="form-control" placeholder="https://linkedin.com/in/yourusername" />
+                            <span asp-validation-for="LinkedInUrl" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="ResumeFile" class="form-label"></label>
+                            <input asp-for="ResumeFile" class="form-control" type="file" accept=".pdf,.doc,.docx" />
+                            @if (!string.IsNullOrEmpty(Model.ExistingResumeUrl))
+                            {
+                                <div class="form-text mt-2">
+                                    Current resume: <a href="@Model.ExistingResumeUrl" target="_blank">View Document</a>
+                                </div>
+                            }
+                            <div class="form-text">Upload a new resume to replace the existing one (PDF or DOCX).</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between align-items-center">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

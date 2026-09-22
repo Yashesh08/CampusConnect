@@ -22,4 +22,5 @@ public class Opportunity
     public User Organizer { get; set; } = null!;
     public Department? TargetDepartment { get; set; }
     public ICollection<Application> Applications { get; set; } = new List<Application>();
+    public ICollection<OpportunitySkill> RequiredSkills { get; set; } = new List<OpportunitySkill>();
 }

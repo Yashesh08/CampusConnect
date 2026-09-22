@@ -1,55 +1,110 @@
+@using Microsoft.AspNetCore.Identity
+@using CampusConnect.Models
+@using CampusConnect.Models.Enums
+@inject UserManager<User> UserManager
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var isLoggedIn = Context.Session.GetString("UserId") != null;
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
+    UserRole? userRole = null;
+    if (isLoggedIn) {
+        var appUser = await UserManager.GetUserAsync(User);
+        if (appUser != null) {
+            userRole = appUser.Role;
+        }
+    }
 }
 
-<div class="mt-5">
+<div class="container mt-5">
     @if (!isLoggedIn)
     {
-        <div class="hero text-center">
+        <div class="hero">
             <h1>Welcome to CampusConnect</h1>
-            <p class="lead">Connect, collaborate, and grow together</p>
+            <p class="lead">Connect, collaborate, and grow together in your college ecosystem</p>
         </div>
 
-        <div class="card-page">
-            <h3 class="mb-4">Please login or register to continue</h3>
-            <div class="d-flex gap-2">
-                <a class="btn btn-primary flex-grow-1" asp-controller="Account" asp-action="Login">Login</a>
-                <a class="btn btn-outline-primary flex-grow-1" asp-controller="Account" asp-action="Register">Register</a>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card-page text-center">
+                    <h3 class="mb-4">Get Started</h3>
+                    <p class="text-muted mb-4">Please login or register with your @("college.edu") email to continue.</p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a class="btn btn-primary px-5" asp-area="Identity" asp-page="/Account/Login">Login</a>
+                        <a class="btn btn-outline-primary px-5" asp-area="Identity" asp-page="/Account/Register">Register</a>
+                    </div>
+                </div>
             </div>
         </div>
     }
-    else
+    else if (userRole.HasValue)
     {
         <div class="hero">
-            <h1>Welcome back, @Context.Session.GetString("UserEmail")</h1>
-            <p class="lead">Choose what you'd like to explore</p>
+            <h1>Welcome back, @User.Identity?.Name!</h1>
+            <p class="lead">Here is your @userRole.Value Dashboard</p>
         </div>
 
-        <div class="row g-3">
-            <div class="col-md-4">
-                <div class="card-page text-center h-100">
-                    <h5 class="mb-3">🏢 Departments</h5>
-                    <p class="text-muted mb-3">Browse and manage departments</p>
-                    <a class="btn btn-primary btn-sm" asp-controller="Departments" asp-action="Index">Explore Departments</a>
+        <div class="row g-4 justify-content-center">
+        @switch (userRole.Value)
+        {
+            case UserRole.Student:
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">👤 My Profile</h5>
+                        <p class="text-muted mb-4">Manage your student profile, bio, and links.</p>
+                        <a class="btn btn-primary w-100" asp-controller="StudentProfiles" asp-action="Index">Manage Profile</a>
+                    </div>
                 </div>
-            </div>
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">💡 Skills</h5>
+                        <p class="text-muted mb-4">Add your technical and soft skills.</p>
+                        <a class="btn btn-primary w-100" asp-controller="Skills" asp-action="Index">Manage Skills</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">🏢 Departments</h5>
+                        <p class="text-muted mb-4">Browse college departments.</p>
+                        <a class="btn btn-outline-primary w-100" asp-controller="Departments" asp-action="Index">Explore</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">🔍 Matching Simulator</h5>
+                        <p class="text-muted mb-4">Test your skills against a dummy opportunity.</p>
+                        <a class="btn btn-warning w-100" asp-controller="Home" asp-action="TestEngine">Run Simulator</a>
+                    </div>
+                </div>
+                break;
+                
+            case UserRole.Faculty:
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">👨‍🏫 Faculty Dashboard</h5>
+                        <p class="text-muted mb-4">Manage your courses and students.</p>
+                        <button class="btn btn-secondary w-100" disabled>Coming Soon (Person 3)</button>
+                    </div>
+                </div>
+                break;
 
-            <div class="col-md-4">
-                <div class="card-page text-center h-100">
-                    <h5 class="mb-3">👤 Student Profiles</h5>
-                    <p class="text-muted mb-3">View and edit student profiles</p>
-                    <a class="btn btn-primary btn-sm" asp-controller="StudentProfiles" asp-action="Index">Explore Profiles</a>
+            case UserRole.Admin:
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">⚙️ Admin Console</h5>
+                        <p class="text-muted mb-4">System administration and user management.</p>
+                        <button class="btn btn-secondary w-100" disabled>Coming Soon (Shared/Person 3)</button>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card-page text-center h-100">
-                    <h5 class="mb-3">💡 Skills</h5>
-                    <p class="text-muted mb-3">Manage skills and competencies</p>
-                    <a class="btn btn-primary btn-sm" asp-controller="Skills" asp-action="Index">Explore Skills</a>
+                break;
+                
+            default:
+                <div class="col-md-6 text-center">
+                    <div class="card-page">
+                        <h5 class="mb-3">🚧 @userRole.Value Dashboard</h5>
+                        <p class="text-muted">This dashboard is currently under construction by another team member.</p>
+                    </div>
                 </div>
-            </div>
+                break;
+        }
         </div>
     }
 </div>

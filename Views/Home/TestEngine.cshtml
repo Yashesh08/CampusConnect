@@ -1,0 +1,103 @@
+@{
+    ViewData["Title"] = "Engine Test";
+    var opportunity = ViewBag.Opportunity as CampusConnect.Models.Opportunity;
+    var matchResult = ViewBag.MatchResult as CampusConnect.Services.MatchResult;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card-page mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>🔍 Matching Engine Simulator</h3>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+                </div>
+                <p class="text-muted">This page simulates how the Skill Gap Engine evaluates your profile against a dummy opportunity.</p>
+            </div>
+
+            <div class="card-page mb-4">
+                <h5>Opportunity: @opportunity?.Title</h5>
+                <p class="text-muted mb-3">@opportunity?.Category | @opportunity?.Description</p>
+                
+                <h6 class="fw-bold">Required Skills:</h6>
+                <div>
+                    @if (opportunity?.RequiredSkills != null && opportunity.RequiredSkills.Any())
+                    {
+                        foreach (var req in opportunity.RequiredSkills)
+                        {
+                            <span class="badge bg-secondary me-1 mb-1 fs-6">@req.Skill.SkillName</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">None specified</span>
+                    }
+                </div>
+            </div>
+
+            <div class="card-page">
+                <h4 class="mb-4">Your Match Result</h4>
+                
+                <div class="d-flex align-items-center mb-4">
+                    <div class="me-4 text-center">
+                        <div class="display-4 fw-bold text-@(matchResult?.MatchPercentage == 100 ? "success" : (matchResult?.MatchPercentage >= 50 ? "warning" : "danger"))">
+                            @matchResult?.MatchPercentage%
+                        </div>
+                        <div class="text-muted small">Compatibility</div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="progress" style="height: 15px;">
+                            <div class="progress-bar bg-@(matchResult?.MatchPercentage == 100 ? "success" : (matchResult?.MatchPercentage >= 50 ? "warning" : "danger"))" 
+                                 role="progressbar" 
+                                 style="width: @matchResult?.MatchPercentage%" 
+                                 aria-valuenow="@matchResult?.MatchPercentage" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success fw-bold"><i class="bi bi-check-circle"></i> Matching Skills</h6>
+                        <ul class="list-group list-group-flush mb-3">
+                            @if (matchResult?.MatchingSkills.Any() == true)
+                            {
+                                foreach (var skill in matchResult.MatchingSkills)
+                                {
+                                    <li class="list-group-item bg-transparent border-0 px-0 py-1">
+                                        ✅ @skill.SkillName
+                                    </li>
+                                }
+                            }
+                            else
+                            {
+                                <li class="list-group-item bg-transparent border-0 px-0 py-1 text-muted">No matching skills found.</li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-danger fw-bold"><i class="bi bi-x-circle"></i> Missing Skills (Gap)</h6>
+                        <ul class="list-group list-group-flush">
+                            @if (matchResult?.MissingSkills.Any() == true)
+                            {
+                                foreach (var skill in matchResult.MissingSkills)
+                                {
+                                    <li class="list-group-item bg-transparent border-0 px-0 py-1">
+                                        ❌ @skill.SkillName
+                                    </li>
+                                }
+                            }
+                            else
+                            {
+                                <li class="list-group-item bg-transparent border-0 px-0 py-1 text-success">You have all required skills!</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

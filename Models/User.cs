@@ -2,19 +2,13 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using CampusConnect.Models.Enums;
 
+using Microsoft.AspNetCore.Identity;
+
 namespace CampusConnect.Models;
 
 [Table("users")]
-public class User
+public class User : IdentityUser<Guid>
 {
-    [Key, Column("user_id")]
-    public Guid UserId { get; set; } = Guid.NewGuid();
-
-    [Required, EmailAddress, MaxLength(320)]
-    public string Email { get; set; } = string.Empty;
-
-    [Required, MaxLength(512), Column("password_hash")]
-    public string PasswordHash { get; set; } = string.Empty;
 
     [Required]
     public UserRole Role { get; set; }

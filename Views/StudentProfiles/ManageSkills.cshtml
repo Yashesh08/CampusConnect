@@ -1,0 +1,85 @@
+@model CampusConnect.Models.StudentProfile
+@{
+    ViewData["Title"] = "Manage Skills";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card-page mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>💡 Manage Your Skills</h3>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Profile</a>
+                </div>
+
+                <form asp-action="AddSkill" method="post" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Select Skill</label>
+                        <select name="skillId" class="form-select" asp-items="@(ViewBag.AvailableSkills as SelectList)" required>
+                            <option value="">-- Select Skill --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Proficiency</label>
+                        <select name="proficiencyLevel" class="form-select" asp-items="Html.GetEnumSelectList<CampusConnect.Models.Enums.ProficiencyLevel>()" required></select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">Add Skill</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-page">
+                <h5 class="mb-4">Your Added Skills</h5>
+                @if (Model.StudentSkills.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Skill</th>
+                                    <th>Category</th>
+                                    <th>Proficiency</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ss in Model.StudentSkills)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@ss.Skill.SkillName</td>
+                                        <td><span class="badge bg-secondary">@ss.Skill.Category</span></td>
+                                        <td>
+                                            @if (ss.ProficiencyLevel == CampusConnect.Models.Enums.ProficiencyLevel.Beginner)
+                                            {
+                                                <span class="badge bg-info text-dark">@ss.ProficiencyLevel</span>
+                                            }
+                                            else if (ss.ProficiencyLevel == CampusConnect.Models.Enums.ProficiencyLevel.Intermediate)
+                                            {
+                                                <span class="badge bg-primary">@ss.ProficiencyLevel</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">@ss.ProficiencyLevel</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <form asp-action="RemoveSkill" method="post" class="d-inline">
+                                                <input type="hidden" name="studentSkillId" value="@ss.StudentSkillId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this skill?');">Remove</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4">No skills added yet. Add some skills above to boost your profile!</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

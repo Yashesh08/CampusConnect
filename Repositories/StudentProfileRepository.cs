@@ -15,6 +15,9 @@ public class StudentProfileRepository : IStudentProfileRepository
     public async Task<StudentProfile?> GetByIdAsync(Guid id) =>
         await _context.StudentProfiles.Include(p => p.Department).FirstOrDefaultAsync(p => p.ProfileId == id);
 
+    public async Task<StudentProfile?> GetByUserIdAsync(Guid userId) =>
+        await _context.StudentProfiles.Include(p => p.Department).Include(p => p.StudentSkills).ThenInclude(ss => ss.Skill).FirstOrDefaultAsync(p => p.UserId == userId);
+
     public async Task AddAsync(StudentProfile profile)
     {
         _context.StudentProfiles.Add(profile);
@@ -33,6 +36,22 @@ public class StudentProfileRepository : IStudentProfileRepository
         if (p != null)
         {
             _context.StudentProfiles.Remove(p);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task AddSkillAsync(StudentSkill studentSkill)
+    {
+        _context.StudentSkills.Add(studentSkill);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveSkillAsync(int studentSkillId)
+    {
+        var ss = await _context.StudentSkills.FindAsync(studentSkillId);
+        if (ss != null)
+        {
+            _context.StudentSkills.Remove(ss);
             await _context.SaveChangesAsync();
         }
     }

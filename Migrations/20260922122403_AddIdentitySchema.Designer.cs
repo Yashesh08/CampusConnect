@@ -3,6 +3,7 @@ using System;
 using CampusConnect.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,47 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CampusConnect.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922122403_AddIdentitySchema")]
+    partial class AddIdentitySchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
-
-            modelBuilder.Entity("CampusConnect.Models.Application", b =>
-                {
-                    b.Property<Guid>("ApplicationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("application_id");
-
-                    b.Property<DateTime>("AppliedAt")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("applied_at");
-
-                    b.Property<Guid>("OpportunityId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("opportunity_id");
-
-                    b.Property<string>("OrganizerRemarks")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("organizer_remarks");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("student_id");
-
-                    b.HasKey("ApplicationId");
-
-                    b.HasIndex("OpportunityId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("applications");
-                });
 
             modelBuilder.Entity("CampusConnect.Models.Department", b =>
                 {
@@ -74,90 +42,6 @@ namespace CampusConnect.Migrations
                     b.HasKey("DepartmentId");
 
                     b.ToTable("departments");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.Opportunity", b =>
-                {
-                    b.Property<Guid>("OpportunityId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("opportunity_id");
-
-                    b.Property<int>("ApprovalStatus")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("approval_status");
-
-                    b.Property<int?>("Capacity")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Category")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("EventDate")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("event_date");
-
-                    b.Property<Guid>("OrganizerId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("organizer_id");
-
-                    b.Property<DateTime>("RegistrationDeadline")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("registration_deadline");
-
-                    b.Property<string>("StipendSalary")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("stipend_salary");
-
-                    b.Property<int?>("TargetDepartmentId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("target_department_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("WorkMode")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("work_mode");
-
-                    b.HasKey("OpportunityId");
-
-                    b.HasIndex("OrganizerId");
-
-                    b.HasIndex("TargetDepartmentId");
-
-                    b.ToTable("opportunities");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.OpportunitySkill", b =>
-                {
-                    b.Property<int>("OpportunitySkillId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("opportunity_skill_id");
-
-                    b.Property<Guid>("OpportunityId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("opportunity_id");
-
-                    b.Property<int>("SkillId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("skill_id");
-
-                    b.HasKey("OpportunitySkillId");
-
-                    b.HasIndex("OpportunityId");
-
-                    b.HasIndex("SkillId");
-
-                    b.ToTable("opportunity_skills");
                 });
 
             modelBuilder.Entity("CampusConnect.Models.Skill", b =>
@@ -238,34 +122,6 @@ namespace CampusConnect.Migrations
                         .IsUnique();
 
                     b.ToTable("student_profiles");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.StudentSkill", b =>
-                {
-                    b.Property<int>("StudentSkillId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("student_skill_id");
-
-                    b.Property<int>("ProficiencyLevel")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("proficiency_level");
-
-                    b.Property<int>("SkillId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("skill_id");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("student_id");
-
-                    b.HasKey("StudentSkillId");
-
-                    b.HasIndex("SkillId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("student_skills");
                 });
 
             modelBuilder.Entity("CampusConnect.Models.User", b =>
@@ -469,61 +325,6 @@ namespace CampusConnect.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("CampusConnect.Models.Application", b =>
-                {
-                    b.HasOne("CampusConnect.Models.Opportunity", "Opportunity")
-                        .WithMany("Applications")
-                        .HasForeignKey("OpportunityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.StudentProfile", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Opportunity");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.Opportunity", b =>
-                {
-                    b.HasOne("CampusConnect.Models.User", "Organizer")
-                        .WithMany()
-                        .HasForeignKey("OrganizerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.Department", "TargetDepartment")
-                        .WithMany()
-                        .HasForeignKey("TargetDepartmentId");
-
-                    b.Navigation("Organizer");
-
-                    b.Navigation("TargetDepartment");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.OpportunitySkill", b =>
-                {
-                    b.HasOne("CampusConnect.Models.Opportunity", "Opportunity")
-                        .WithMany("RequiredSkills")
-                        .HasForeignKey("OpportunityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.Skill", "Skill")
-                        .WithMany()
-                        .HasForeignKey("SkillId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Opportunity");
-
-                    b.Navigation("Skill");
-                });
-
             modelBuilder.Entity("CampusConnect.Models.StudentProfile", b =>
                 {
                     b.HasOne("CampusConnect.Models.Department", "Department")
@@ -539,25 +340,6 @@ namespace CampusConnect.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.StudentSkill", b =>
-                {
-                    b.HasOne("CampusConnect.Models.Skill", "Skill")
-                        .WithMany("StudentSkills")
-                        .HasForeignKey("SkillId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.StudentProfile", "Student")
-                        .WithMany("StudentSkills")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Skill");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -614,23 +396,6 @@ namespace CampusConnect.Migrations
             modelBuilder.Entity("CampusConnect.Models.Department", b =>
                 {
                     b.Navigation("StudentProfiles");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.Opportunity", b =>
-                {
-                    b.Navigation("Applications");
-
-                    b.Navigation("RequiredSkills");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.Skill", b =>
-                {
-                    b.Navigation("StudentSkills");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.StudentProfile", b =>
-                {
-                    b.Navigation("StudentSkills");
                 });
 
             modelBuilder.Entity("CampusConnect.Models.User", b =>
