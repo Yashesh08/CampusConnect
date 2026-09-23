@@ -14,15 +14,88 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<StudentSkill> StudentSkills => Set<StudentSkill>();
     public DbSet<OpportunitySkill> OpportunitySkills => Set<OpportunitySkill>();
-    // Users DbSet is provided by IdentityDbContext
+    public DbSet<FacultyProfile> FacultyProfiles => Set<FacultyProfile>();
+    public DbSet<FacultyOfficeHour> FacultyOfficeHours => Set<FacultyOfficeHour>();
+    public DbSet<Grievance> Grievances => Set<Grievance>();
+    public DbSet<GrievanceLog> GrievanceLogs => Set<GrievanceLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Keep FacultyProfile out of the model for now
-        modelBuilder.Ignore<FacultyProfile>();
+        base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<StudentProfile>().Ignore(p => p.User);
-        
+        // StudentProfile <-> User (1 to 1)
+        modelBuilder.Entity<StudentProfile>()
+            .HasOne(sp => sp.User)
+            .WithOne(u => u.StudentProfile)
+            .HasForeignKey<StudentProfile>(sp => sp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // StudentProfile <-> Department (Many to 1)
+        modelBuilder.Entity<StudentProfile>()
+            .HasOne(sp => sp.Department)
+            .WithMany(d => d.StudentProfiles)
+            .HasForeignKey(sp => sp.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // FacultyProfile <-> User (1 to 1)
+        modelBuilder.Entity<FacultyProfile>()
+            .HasOne(fp => fp.User)
+            .WithOne(u => u.FacultyProfile)
+            .HasForeignKey<FacultyProfile>(fp => fp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // FacultyProfile <-> Department (Many to 1)
+        modelBuilder.Entity<FacultyProfile>()
+            .HasOne(fp => fp.Department)
+            .WithMany(d => d.FacultyProfiles)
+            .HasForeignKey(fp => fp.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // FacultyOfficeHour relationships
+        modelBuilder.Entity<FacultyOfficeHour>()
+            .HasOne(foh => foh.FacultyUser)
+            .WithMany()
+            .HasForeignKey(foh => foh.FacultyUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FacultyOfficeHour>()
+            .HasOne(foh => foh.BookedByStudent)
+            .WithMany()
+            .HasForeignKey(foh => foh.BookedByStudentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Grievance relationships
+        modelBuilder.Entity<Grievance>()
+            .HasOne(g => g.ComplainantUser)
+            .WithMany()
+            .HasForeignKey(g => g.ComplainantUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Grievance>()
+            .HasOne(g => g.AssignedToUser)
+            .WithMany()
+            .HasForeignKey(g => g.AssignedToUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Grievance>()
+            .HasOne(g => g.Department)
+            .WithMany()
+            .HasForeignKey(g => g.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // GrievanceLog relationships
+        modelBuilder.Entity<GrievanceLog>()
+            .HasOne(gl => gl.Grievance)
+            .WithMany(g => g.Logs)
+            .HasForeignKey(gl => gl.GrievanceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GrievanceLog>()
+            .HasOne(gl => gl.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(gl => gl.UpdatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Configure many-to-many relationship for StudentSkills
         modelBuilder.Entity<StudentSkill>()
             .HasOne(ss => ss.Student)
@@ -42,9 +115,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             
         modelBuilder.Entity<OpportunitySkill>()
             .HasOne(os => os.Skill)
-            .WithMany() // Assuming Skill doesn't need to know all opportunities
+            .WithMany()
             .HasForeignKey(os => os.SkillId);
-
-        base.OnModelCreating(modelBuilder);
     }
 }

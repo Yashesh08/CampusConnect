@@ -2,109 +2,223 @@
 @using CampusConnect.Models
 @using CampusConnect.Models.Enums
 @inject UserManager<User> UserManager
+
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Campus Ecosystem Dashboard";
     var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
     UserRole? userRole = null;
-    if (isLoggedIn) {
-        var appUser = await UserManager.GetUserAsync(User);
-        if (appUser != null) {
+    User? appUser = null;
+    if (isLoggedIn)
+    {
+        appUser = await UserManager.GetUserAsync(User);
+        if (appUser != null)
+        {
             userRole = appUser.Role;
         }
     }
 }
 
-<div class="container mt-5">
-    @if (!isLoggedIn)
-    {
-        <div class="hero">
-            <h1>Welcome to CampusConnect</h1>
-            <p class="lead">Connect, collaborate, and grow together in your college ecosystem</p>
+@if (!isLoggedIn)
+{
+    <!-- Hero Banner for Visitors -->
+    <div class="cc-hero">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="cc-badge cc-badge-purple mb-3">
+                    <i class="fa-solid fa-sparkles"></i> Campus Ecosystem Connected
+                </span>
+                <h1>Welcome to CampusConnect</h1>
+                <p class="lead">
+                    A unified platform for academic departments, grievance redressal, faculty office hours, student profiles, and skill matching.
+                </p>
+                <div class="d-flex flex-wrap gap-3 mt-4">
+                    <a class="cc-btn" asp-area="Identity" asp-page="/Account/Login">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login to Workspace
+                    </a>
+                    <a class="cc-btn cc-btn-outline text-white border-white" asp-area="Identity" asp-page="/Account/Register">
+                        <i class="fa-solid fa-user-plus"></i> Create Account
+                    </a>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card-page text-center">
-                    <h3 class="mb-4">Get Started</h3>
-                    <p class="text-muted mb-4">Please login or register with your @("college.edu") email to continue.</p>
-                    <div class="d-flex gap-3 justify-content-center">
-                        <a class="btn btn-primary px-5" asp-area="Identity" asp-page="/Account/Login">Login</a>
-                        <a class="btn btn-outline-primary px-5" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    <!-- Quick Stats Metric Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon indigo">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="metric-details">
+                    <div class="metric-label">Departments</div>
+                    <div class="metric-value">4 Active</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon purple">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div class="metric-details">
+                    <div class="metric-label">Student Profiles</div>
+                    <div class="metric-value">Enrolled</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon amber">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div class="metric-details">
+                    <div class="metric-label">Grievance Desk</div>
+                    <div class="metric-value">Operational</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon emerald">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="metric-details">
+                    <div class="metric-label">Faculty Directory</div>
+                    <div class="metric-value">Connected</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local Seeding Information Card -->
+    <div class="cc-card mb-5">
+        <div class="cc-card-header">
+            <h5 class="cc-card-title">
+                <i class="fa-solid fa-key text-primary me-2"></i> Local Development Pre-seeded Accounts
+            </h5>
+            <span class="cc-badge cc-badge-success">Seeded Database</span>
+        </div>
+        <div class="cc-card-body">
+            <p class="text-muted mb-4">
+                Use any of the following pre-configured dummy user accounts for local testing. All accounts share password: <code class="text-primary fw-bold">Password123!</code>
+            </p>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold">Administrator</span>
+                            <span class="cc-badge cc-badge-danger">Admin</span>
+                        </div>
+                        <code class="d-block text-dark small mb-2">admin@campusconnect.edu</code>
+                        <small class="text-muted">Full system configuration & governance access.</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold">Dr. John Smith</span>
+                            <span class="cc-badge cc-badge-purple">Faculty</span>
+                        </div>
+                        <code class="d-block text-dark small mb-2">faculty.smith@campusconnect.edu</code>
+                        <small class="text-muted">Associate Professor, Computer Science Dept.</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold">Alice Johnson</span>
+                            <span class="cc-badge cc-badge-info">Student</span>
+                        </div>
+                        <code class="d-block text-dark small mb-2">student.alice@campusconnect.edu</code>
+                        <small class="text-muted">Roll CS202401, CSE Department.</small>
                     </div>
                 </div>
             </div>
         </div>
-    }
-    else if (userRole.HasValue)
-    {
-        <div class="hero">
-            <h1>Welcome back, @User.Identity?.Name!</h1>
-            <p class="lead">Here is your @userRole.Value Dashboard</p>
+    </div>
+}
+else if (userRole.HasValue)
+{
+    <!-- Authenticated User Hero Banner -->
+    <div class="cc-hero">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="cc-badge cc-badge-purple fs-6 px-3 py-1">
+                <i class="fa-solid fa-user-shield"></i> @userRole.Value Portal
+            </span>
+            <span class="text-white-50">• Signed in as @User.Identity?.Name</span>
+        </div>
+        <h1>Welcome Back, @User.Identity?.Name</h1>
+        <p class="lead">
+            Manage your academic activities, profiles, departments, and campus tools from your personalized dashboard.
+        </p>
+    </div>
+
+    <!-- Dashboard Quick Action Cards -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="cc-card">
+                <div class="cc-card-header">
+                    <h5 class="cc-card-title"><i class="fa-solid fa-building-columns text-primary me-2"></i> Departments</h5>
+                </div>
+                <div class="cc-card-body">
+                    <p class="text-muted">Explore academic departments, HOD assignments, and faculty listings.</p>
+                </div>
+                <div class="cc-card-footer">
+                    <a class="cc-btn cc-btn-outline w-100" asp-controller="Departments" asp-action="Index">
+                        Browse Departments <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <div class="row g-4 justify-content-center">
-        @switch (userRole.Value)
-        {
-            case UserRole.Student:
-                <div class="col-md-4">
-                    <div class="card-page text-center h-100">
-                        <h5 class="mb-3">👤 My Profile</h5>
-                        <p class="text-muted mb-4">Manage your student profile, bio, and links.</p>
-                        <a class="btn btn-primary w-100" asp-controller="StudentProfiles" asp-action="Index">Manage Profile</a>
-                    </div>
+        <div class="col-md-4">
+            <div class="cc-card">
+                <div class="cc-card-header">
+                    <h5 class="cc-card-title"><i class="fa-solid fa-id-card text-primary me-2"></i> Student Profiles</h5>
                 </div>
-                <div class="col-md-4">
-                    <div class="card-page text-center h-100">
-                        <h5 class="mb-3">💡 Skills</h5>
-                        <p class="text-muted mb-4">Add your technical and soft skills.</p>
-                        <a class="btn btn-primary w-100" asp-controller="Skills" asp-action="Index">Manage Skills</a>
-                    </div>
+                <div class="cc-card-body">
+                    <p class="text-muted">View student profiles, skill records, GitHub/LinkedIn links, and resumes.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="card-page text-center h-100">
-                        <h5 class="mb-3">🏢 Departments</h5>
-                        <p class="text-muted mb-4">Browse college departments.</p>
-                        <a class="btn btn-outline-primary w-100" asp-controller="Departments" asp-action="Index">Explore</a>
-                    </div>
+                <div class="cc-card-footer">
+                    <a class="cc-btn w-100" asp-controller="StudentProfiles" asp-action="Index">
+                        Manage Profiles <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
                 </div>
-                <div class="col-md-4">
-                    <div class="card-page text-center h-100">
-                        <h5 class="mb-3">🔍 Matching Simulator</h5>
-                        <p class="text-muted mb-4">Test your skills against a dummy opportunity.</p>
-                        <a class="btn btn-warning w-100" asp-controller="Home" asp-action="TestEngine">Run Simulator</a>
-                    </div>
-                </div>
-                break;
-                
-            case UserRole.Faculty:
-                <div class="col-md-4">
-                    <div class="card-page text-center h-100">
-                        <h5 class="mb-3">👨‍🏫 Faculty Dashboard</h5>
-                        <p class="text-muted mb-4">Manage your courses and students.</p>
-                        <button class="btn btn-secondary w-100" disabled>Coming Soon (Person 3)</button>
-                    </div>
-                </div>
-                break;
-
-            case UserRole.Admin:
-                <div class="col-md-4">
-                    <div class="card-page text-center h-100">
-                        <h5 class="mb-3">⚙️ Admin Console</h5>
-                        <p class="text-muted mb-4">System administration and user management.</p>
-                        <button class="btn btn-secondary w-100" disabled>Coming Soon (Shared/Person 3)</button>
-                    </div>
-                </div>
-                break;
-                
-            default:
-                <div class="col-md-6 text-center">
-                    <div class="card-page">
-                        <h5 class="mb-3">🚧 @userRole.Value Dashboard</h5>
-                        <p class="text-muted">This dashboard is currently under construction by another team member.</p>
-                    </div>
-                </div>
-                break;
-        }
+            </div>
         </div>
-    }
-</div>
+
+        <div class="col-md-4">
+            <div class="cc-card">
+                <div class="cc-card-header">
+                    <h5 class="cc-card-title"><i class="fa-solid fa-lightbulb text-primary me-2"></i> Skills Registry</h5>
+                </div>
+                <div class="cc-card-body">
+                    <p class="text-muted">Configure technical and soft skills used for opportunity matching.</p>
+                </div>
+                <div class="cc-card-footer">
+                    <a class="cc-btn cc-btn-secondary w-100" asp-controller="Skills" asp-action="Index">
+                        Manage Skills <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="cc-card">
+                <div class="cc-card-header">
+                    <h5 class="cc-card-title"><i class="fa-solid fa-sliders text-warning me-2"></i> Skill Matching Simulator</h5>
+                    <span class="cc-badge cc-badge-warning">Interactive</span>
+                </div>
+                <div class="cc-card-body">
+                    <p class="text-muted">Test your profile skills against a mock internship opportunity using the matching engine algorithm.</p>
+                </div>
+                <div class="cc-card-footer">
+                    <a class="cc-btn w-100 style-warning" asp-controller="Home" asp-action="TestEngine" style="background: #F59E0B; color: white;">
+                        Run Skill Simulator <i class="fa-solid fa-play ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
