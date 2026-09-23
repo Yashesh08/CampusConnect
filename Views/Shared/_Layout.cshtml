@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 @using Microsoft.AspNetCore.Identity
 @using CampusConnect.Models
 @inject UserManager<User> UserManager
@@ -22,8 +21,8 @@
     <!-- Glassmorphism Top Navigation (Shared UI Shell) -->
     <nav class="navbar navbar-expand-lg cc-navbar fixed-top">
         <div class="container">
-            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                <i class="fa-solid fa-graduation-cap"></i> CampusConnect
+            <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                <i class="fa-solid fa-graduation-cap text-primary"></i> CampusConnect
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ccNavbar" aria-controls="ccNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -32,23 +31,38 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="Index">
-                            <i class="fa-solid fa-house"></i> Home
+                            <i class="fa-solid fa-house me-1"></i> Home
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Departments" asp-action="Index">
-                            <i class="fa-solid fa-building-columns"></i> Departments
+                        <a class="nav-link" asp-controller="Opportunities" asp-action="Index">
+                            <i class="fa-solid fa-briefcase me-1"></i> Opportunities
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="StudentProfiles" asp-action="Index">
-                            <i class="fa-solid fa-id-card"></i> Profiles
+                        <a class="nav-link" asp-controller="Applications" asp-action="MyApplications">
+                            <i class="fa-solid fa-paper-plane me-1"></i> My Applications
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Skills" asp-action="Index">
-                            <i class="fa-solid fa-lightbulb"></i> Skills
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user-gear me-1"></i> Organizer Suite
                         </a>
+                        <ul class="dropdown-menu shadow border-0 rounded-3">
+                            <li><a class="dropdown-item" asp-controller="Opportunities" asp-action="Create"><i class="fa-solid fa-plus text-primary me-2"></i> Post Opportunity</a></li>
+                            <li><a class="dropdown-item" asp-controller="Organizer" asp-action="Dashboard"><i class="fa-solid fa-chart-line text-info me-2"></i> Organizer Dashboard</a></li>
+                            <li><a class="dropdown-item" asp-controller="Opportunities" asp-action="PendingApprovals"><i class="fa-solid fa-check-double text-success me-2"></i> Admin Approvals</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-layer-group me-1"></i> Academic Modules
+                        </a>
+                        <ul class="dropdown-menu shadow border-0 rounded-3">
+                            <li><a class="dropdown-item" asp-controller="Departments" asp-action="Index"><i class="fa-solid fa-building-columns text-primary me-2"></i> Departments</a></li>
+                            <li><a class="dropdown-item" asp-controller="StudentProfiles" asp-action="Index"><i class="fa-solid fa-id-card text-purple me-2"></i> Student Profiles</a></li>
+                            <li><a class="dropdown-item" asp-controller="Skills" asp-action="Index"><i class="fa-solid fa-lightbulb text-warning me-2"></i> Skills Registry</a></li>
+                        </ul>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
@@ -89,46 +103,10 @@
                                     </form>
                                 </li>
                             </ul>
-=======
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CampusConnect - @ViewData["Title"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoYz1FQ7759dC2e1z9e+qtw1Yd1zW0nqUhv+0Q5y0Q2QvF5" crossorigin="anonymous">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-        <div class="container">
-            <a class="navbar-brand" asp-controller="Home" asp-action="Index">CampusConnect</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBar" aria-controls="navBar" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navBar">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" asp-controller="Opportunities" asp-action="Index">Opportunities</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Applications" asp-action="MyApplications">My Applications</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Opportunities" asp-action="Create">Post Opportunity</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Organizer" asp-action="Dashboard">Organizer Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Opportunities" asp-action="PendingApprovals">Admin Approvals</a></li>
-                    @if (User.Identity?.IsAuthenticated ?? false)
-                    {
-                        <li class="nav-item"><a class="nav-link" asp-controller="Departments" asp-action="Index">Departments</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="StudentProfiles" asp-action="Index">Profiles</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Skills" asp-action="Index">Skills</a></li>
-                        <li class="nav-item">
-                            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                                <button type="submit" class="nav-link btn btn-link text-white">Logout (@User.Identity.Name)</button>
-                            </form>
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                         </li>
                     }
                     else
                     {
-<<<<<<< HEAD
                         <li class="nav-item me-2">
                             <a class="cc-btn cc-btn-outline" asp-area="Identity" asp-page="/Account/Login">
                                 <i class="fa-solid fa-right-to-bracket"></i> Login
@@ -139,18 +117,13 @@
                                 <i class="fa-solid fa-user-plus"></i> Register
                             </a>
                         </li>
-=======
-                        <li class="nav-item"><a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Login</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Register</a></li>
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                     }
                 </ul>
             </div>
         </div>
     </nav>
 
-<<<<<<< HEAD
-    <!-- Main Content Container (Rendered by individual views) -->
+    <!-- Main Content Container -->
     <main role="main" class="container" style="padding-top: 5.5rem; padding-bottom: 3rem;">
         @if (TempData["SuccessMessage"] != null)
         {
@@ -170,7 +143,7 @@
         @RenderBody()
     </main>
 
-    <!-- Shared Modern Footer (Shared UI Shell) -->
+    <!-- Shared Modern Footer -->
     <footer class="cc-footer">
         <div class="container">
             <div class="row g-4">
@@ -179,7 +152,7 @@
                         <i class="fa-solid fa-graduation-cap text-primary"></i> CampusConnect
                     </h5>
                     <p class="small text-muted mb-3">
-                        Empowering academic collaboration, grievance management, student profiles, and skill matching across campus departments.
+                        Empowering academic collaboration, grievance management, student profiles, and opportunity skill matching across campus.
                     </p>
                     <div class="d-flex align-items-center gap-2">
                         <span class="cc-badge cc-badge-success">
@@ -192,10 +165,10 @@
                     <h5>Navigation</h5>
                     <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
                         <li><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+                        <li><a asp-controller="Opportunities" asp-action="Index">Opportunities</a></li>
+                        <li><a asp-controller="Applications" asp-action="MyApplications">My Applications</a></li>
+                        <li><a asp-controller="Organizer" asp-action="Dashboard">Organizer Dashboard</a></li>
                         <li><a asp-controller="Departments" asp-action="Index">Departments</a></li>
-                        <li><a asp-controller="StudentProfiles" asp-action="Index">Student Profiles</a></li>
-                        <li><a asp-controller="Skills" asp-action="Index">Skills Registry</a></li>
-                        <li><a asp-controller="Home" asp-action="TestEngine">Skill Simulator</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-5 col-md-6">
@@ -210,7 +183,7 @@
             </div>
             <hr class="cc-footer-divider" />
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 small text-muted">
-                <div>&copy; @DateTime.UtcNow.Year CampusConnect Platform. Built once, used by all pages.</div>
+                <div>&copy; @DateTime.UtcNow.Year CampusConnect Platform. All rights reserved.</div>
                 <div class="d-flex gap-3">
                     <a href="#" class="text-muted">Privacy Policy</a>
                     <a href="#" class="text-muted">Terms of Service</a>
@@ -225,19 +198,3 @@
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-=======
-    <main role="main" class="container" style="padding-top: 4.5rem;">
-        @RenderBody()
-    </main>
-
-    <footer class="container mt-4">
-        <hr />
-        <small>&copy; CampusConnect</small>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
-    @RenderSection("Scripts", required: false)
-</body>
-</html>
-
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))

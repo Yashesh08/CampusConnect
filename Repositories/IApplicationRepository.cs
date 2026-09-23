@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-namespace CampusConnect.Repositories;
-
-public interface IApplicationRepository { }
-=======
 using CampusConnect.Models;
 using CampusConnect.Models.Enums;
 
@@ -18,4 +13,3 @@ public interface IApplicationRepository
     Task UpdateStatusAsync(Guid applicationId, ApplicationStatus status, string? remarks = null);
     Task DeleteAsync(Guid id);
 }
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))

@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-namespace CampusConnect.Repositories;
-
-public interface IOpportunityRepository { }
-=======
 using CampusConnect.Models;
 using CampusConnect.Models.Enums;
 
@@ -19,4 +14,3 @@ public interface IOpportunityRepository
     Task UpdateStatusAsync(Guid opportunityId, ApprovalStatus status);
     Task DeleteAsync(Guid id);
 }
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
