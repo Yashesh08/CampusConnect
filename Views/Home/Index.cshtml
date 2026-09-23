@@ -2,6 +2,7 @@
 @using CampusConnect.Models
 @using CampusConnect.Models.Enums
 @inject UserManager<User> UserManager
+<<<<<<< HEAD
 
 @{
     ViewData["Title"] = "Campus Ecosystem Dashboard";
@@ -13,11 +14,21 @@
         appUser = await UserManager.GetUserAsync(User);
         if (appUser != null)
         {
+=======
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
+    UserRole? userRole = null;
+    if (isLoggedIn) {
+        var appUser = await UserManager.GetUserAsync(User);
+        if (appUser != null) {
+>>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
             userRole = appUser.Role;
         }
     }
 }
 
+<<<<<<< HEAD
 @if (!isLoggedIn)
 {
     <!-- Hero Banner for Visitors -->
@@ -132,10 +143,29 @@
                         </div>
                         <code class="d-block text-dark small mb-2">student.alice@campusconnect.edu</code>
                         <small class="text-muted">Roll CS202401, CSE Department.</small>
+=======
+<div class="container mt-5">
+    @if (!isLoggedIn)
+    {
+        <div class="hero">
+            <h1>Welcome to CampusConnect</h1>
+            <p class="lead">Connect, collaborate, and grow together in your college ecosystem</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card-page text-center">
+                    <h3 class="mb-4">Get Started</h3>
+                    <p class="text-muted mb-4">Please login or register with your @("college.edu") email to continue.</p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a class="btn btn-primary px-5" asp-area="Identity" asp-page="/Account/Login">Login</a>
+                        <a class="btn btn-outline-primary px-5" asp-area="Identity" asp-page="/Account/Register">Register</a>
+>>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                     </div>
                 </div>
             </div>
         </div>
+<<<<<<< HEAD
     </div>
 }
 else if (userRole.HasValue)
@@ -222,3 +252,79 @@ else if (userRole.HasValue)
         </div>
     </div>
 }
+=======
+    }
+    else if (userRole.HasValue)
+    {
+        <div class="hero">
+            <h1>Welcome back, @User.Identity?.Name!</h1>
+            <p class="lead">Here is your @userRole.Value Dashboard</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+        @switch (userRole.Value)
+        {
+            case UserRole.Student:
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">👤 My Profile</h5>
+                        <p class="text-muted mb-4">Manage your student profile, bio, and links.</p>
+                        <a class="btn btn-primary w-100" asp-controller="StudentProfiles" asp-action="Index">Manage Profile</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">💡 Skills</h5>
+                        <p class="text-muted mb-4">Add your technical and soft skills.</p>
+                        <a class="btn btn-primary w-100" asp-controller="Skills" asp-action="Index">Manage Skills</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">🏢 Departments</h5>
+                        <p class="text-muted mb-4">Browse college departments.</p>
+                        <a class="btn btn-outline-primary w-100" asp-controller="Departments" asp-action="Index">Explore</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">🔍 Matching Simulator</h5>
+                        <p class="text-muted mb-4">Test your skills against a dummy opportunity.</p>
+                        <a class="btn btn-warning w-100" asp-controller="Home" asp-action="TestEngine">Run Simulator</a>
+                    </div>
+                </div>
+                break;
+                
+            case UserRole.Faculty:
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">👨‍🏫 Faculty Dashboard</h5>
+                        <p class="text-muted mb-4">Manage your courses and students.</p>
+                        <button class="btn btn-secondary w-100" disabled>Coming Soon (Person 3)</button>
+                    </div>
+                </div>
+                break;
+
+            case UserRole.Admin:
+                <div class="col-md-4">
+                    <div class="card-page text-center h-100">
+                        <h5 class="mb-3">⚙️ Admin Console</h5>
+                        <p class="text-muted mb-4">System administration and user management.</p>
+                        <button class="btn btn-secondary w-100" disabled>Coming Soon (Shared/Person 3)</button>
+                    </div>
+                </div>
+                break;
+                
+            default:
+                <div class="col-md-6 text-center">
+                    <div class="card-page">
+                        <h5 class="mb-3">🚧 @userRole.Value Dashboard</h5>
+                        <p class="text-muted">This dashboard is currently under construction by another team member.</p>
+                    </div>
+                </div>
+                break;
+        }
+        </div>
+    }
+</div>
+>>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))

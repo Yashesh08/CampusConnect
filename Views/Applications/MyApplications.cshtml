@@ -1,0 +1,102 @@
+@model IEnumerable<CampusConnect.Models.Application>
+
+@{
+    ViewData["Title"] = "My Applications";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">My Applications</h2>
+        <p class="text-muted mb-0">Track the status of your submitted applications for research, events, and internships.</p>
+    </div>
+    <a asp-controller="Opportunities" asp-action="Index" class="btn btn-outline-primary">Browse Opportunities</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 bg-light rounded-3 border">
+        <h4 class="text-muted fw-normal">You haven't applied to any opportunities yet.</h4>
+        <p class="text-muted mb-3">Explore open positions on campus and submit your application!</p>
+        <a asp-controller="Opportunities" asp-action="Index" class="btn btn-primary">Find Opportunities</a>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Opportunity</th>
+                        <th>Applied On</th>
+                        <th>Status</th>
+                        <th>Organizer Remarks</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@app.Opportunity?.Title</strong>
+                                <br />
+                                <small class="text-muted">@app.Opportunity?.Category &bull; @app.Opportunity?.WorkMode</small>
+                            </td>
+                            <td class="text-muted small">@app.AppliedAt.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                @switch (app.Status)
+                                {
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Applied:
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1">Submitted</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.UnderReview:
+                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1">Under Review</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Shortlisted:
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">Shortlisted</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Selected:
+                                        <span class="badge bg-success px-3 py-1">Selected</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Rejected:
+                                        <span class="badge bg-danger px-3 py-1">Not Selected</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(app.OrganizerRemarks))
+                                {
+                                    <span class="fst-italic text-secondary small">"@app.OrganizerRemarks"</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">&mdash;</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a asp-controller="Opportunities" asp-action="Details" asp-route-id="@app.OpportunityId" class="btn btn-sm btn-outline-secondary me-1">Details</a>
+                                
+                                @if (app.Status == CampusConnect.Models.Enums.ApplicationStatus.Applied || app.Status == CampusConnect.Models.Enums.ApplicationStatus.UnderReview)
+                                {
+                                    <form asp-action="Withdraw" asp-route-id="@app.ApplicationId" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to withdraw this application?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Withdraw</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

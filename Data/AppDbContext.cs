@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<StudentSkill> StudentSkills => Set<StudentSkill>();
     public DbSet<OpportunitySkill> OpportunitySkills => Set<OpportunitySkill>();
+<<<<<<< HEAD
     public DbSet<FacultyProfile> FacultyProfiles => Set<FacultyProfile>();
     public DbSet<FacultyOfficeHour> FacultyOfficeHours => Set<FacultyOfficeHour>();
     public DbSet<Grievance> Grievances => Set<Grievance>();
@@ -96,6 +97,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .HasForeignKey(gl => gl.UpdatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+=======
+    public DbSet<Opportunity> Opportunities => Set<Opportunity>();
+    public DbSet<Application> Applications => Set<Application>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Keep FacultyProfile out of the model for now
+        modelBuilder.Ignore<FacultyProfile>();
+
+        modelBuilder.Entity<StudentProfile>().Ignore(p => p.User);
+        
+>>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
         // Configure many-to-many relationship for StudentSkills
         modelBuilder.Entity<StudentSkill>()
             .HasOne(ss => ss.Student)
@@ -115,7 +128,40 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             
         modelBuilder.Entity<OpportunitySkill>()
             .HasOne(os => os.Skill)
+<<<<<<< HEAD
             .WithMany()
             .HasForeignKey(os => os.SkillId);
+=======
+            .WithMany() // Assuming Skill doesn't need to know all opportunities
+            .HasForeignKey(os => os.SkillId);
+
+        // Configure Opportunity relationships
+        modelBuilder.Entity<Opportunity>()
+            .HasOne(o => o.Organizer)
+            .WithMany()
+            .HasForeignKey(o => o.OrganizerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Opportunity>()
+            .HasOne(o => o.TargetDepartment)
+            .WithMany()
+            .HasForeignKey(o => o.TargetDepartmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Application relationships
+        modelBuilder.Entity<Application>()
+            .HasOne(a => a.Opportunity)
+            .WithMany(o => o.Applications)
+            .HasForeignKey(a => a.OpportunityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Application>()
+            .HasOne(a => a.Student)
+            .WithMany()
+            .HasForeignKey(a => a.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        base.OnModelCreating(modelBuilder);
+>>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
     }
 }

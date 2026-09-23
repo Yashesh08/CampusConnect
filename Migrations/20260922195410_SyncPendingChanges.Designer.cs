@@ -3,6 +3,7 @@ using System;
 using CampusConnect.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CampusConnect.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922195410_SyncPendingChanges")]
+    partial class SyncPendingChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
@@ -76,177 +79,6 @@ namespace CampusConnect.Migrations
                     b.ToTable("departments");
                 });
 
-<<<<<<< HEAD
-            modelBuilder.Entity("CampusConnect.Models.FacultyOfficeHour", b =>
-                {
-                    b.Property<Guid>("SlotId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("slot_id");
-
-                    b.Property<Guid?>("BookedByStudentId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("booked_by_student_id");
-
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("end_time");
-
-                    b.Property<Guid>("FacultyUserId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("faculty_user_id");
-
-                    b.Property<bool>("IsBooked")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("is_booked");
-
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("start_time");
-
-                    b.HasKey("SlotId");
-
-                    b.HasIndex("BookedByStudentId");
-
-                    b.HasIndex("FacultyUserId");
-
-                    b.ToTable("faculty_office_hours");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.FacultyProfile", b =>
-                {
-                    b.Property<Guid>("FacultyProfileId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("faculty_profile_id");
-
-                    b.Property<string>("CabinNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("cabin_number");
-
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("department_id");
-
-                    b.Property<string>("Designation")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("FacultyProfileId");
-
-                    b.HasIndex("DepartmentId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("faculty_profiles");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.Grievance", b =>
-                {
-                    b.Property<Guid>("GrievanceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("grievance_id");
-
-                    b.Property<Guid?>("AssignedToUserId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("assigned_to_user_id");
-
-                    b.Property<int>("Category")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("ComplainantUserId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("complainant_user_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("department_id");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsAnonymous")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("is_anonymous");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("resolved_at");
-
-                    b.Property<DateTime?>("SlaDueAt")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("sla_due_at");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("GrievanceId");
-
-                    b.HasIndex("AssignedToUserId");
-
-                    b.HasIndex("ComplainantUserId");
-
-                    b.HasIndex("DepartmentId");
-
-                    b.ToTable("grievances");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.GrievanceLog", b =>
-                {
-                    b.Property<Guid>("LogId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("log_id");
-
-                    b.Property<Guid>("GrievanceId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("grievance_id");
-
-                    b.Property<string>("ResolutionNote")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("resolution_note");
-
-                    b.Property<string>("StatusChangedTo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("status_changed_to");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("timestamp");
-
-                    b.Property<Guid>("UpdatedByUserId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("updated_by_user_id");
-
-                    b.HasKey("LogId");
-
-                    b.HasIndex("GrievanceId");
-
-                    b.HasIndex("UpdatedByUserId");
-
-                    b.ToTable("grievance_logs");
-                });
-
-=======
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
             modelBuilder.Entity("CampusConnect.Models.Opportunity", b =>
                 {
                     b.Property<Guid>("OpportunityId")
@@ -659,110 +491,18 @@ namespace CampusConnect.Migrations
                     b.Navigation("Student");
                 });
 
-<<<<<<< HEAD
-            modelBuilder.Entity("CampusConnect.Models.FacultyOfficeHour", b =>
-                {
-                    b.HasOne("CampusConnect.Models.StudentProfile", "BookedByStudent")
-                        .WithMany()
-                        .HasForeignKey("BookedByStudentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("CampusConnect.Models.User", "FacultyUser")
-                        .WithMany()
-                        .HasForeignKey("FacultyUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BookedByStudent");
-
-                    b.Navigation("FacultyUser");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.FacultyProfile", b =>
-                {
-                    b.HasOne("CampusConnect.Models.Department", "Department")
-                        .WithMany("FacultyProfiles")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.User", "User")
-                        .WithOne("FacultyProfile")
-                        .HasForeignKey("CampusConnect.Models.FacultyProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Department");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.Grievance", b =>
-                {
-                    b.HasOne("CampusConnect.Models.User", "AssignedToUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedToUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("CampusConnect.Models.User", "ComplainantUser")
-                        .WithMany()
-                        .HasForeignKey("ComplainantUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("CampusConnect.Models.Department", "Department")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AssignedToUser");
-
-                    b.Navigation("ComplainantUser");
-
-                    b.Navigation("Department");
-                });
-
-            modelBuilder.Entity("CampusConnect.Models.GrievanceLog", b =>
-                {
-                    b.HasOne("CampusConnect.Models.Grievance", "Grievance")
-                        .WithMany("Logs")
-                        .HasForeignKey("GrievanceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.User", "UpdatedByUser")
-                        .WithMany()
-                        .HasForeignKey("UpdatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Grievance");
-
-                    b.Navigation("UpdatedByUser");
-                });
-
-=======
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
             modelBuilder.Entity("CampusConnect.Models.Opportunity", b =>
                 {
                     b.HasOne("CampusConnect.Models.User", "Organizer")
                         .WithMany()
                         .HasForeignKey("OrganizerId")
-<<<<<<< HEAD
-                        .OnDelete(DeleteBehavior.Cascade)
-=======
                         .OnDelete(DeleteBehavior.Restrict)
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                         .IsRequired();
 
                     b.HasOne("CampusConnect.Models.Department", "TargetDepartment")
                         .WithMany()
-<<<<<<< HEAD
-                        .HasForeignKey("TargetDepartmentId");
-=======
                         .HasForeignKey("TargetDepartmentId")
                         .OnDelete(DeleteBehavior.SetNull);
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
 
                     b.Navigation("Organizer");
 
@@ -793,28 +533,16 @@ namespace CampusConnect.Migrations
                     b.HasOne("CampusConnect.Models.Department", "Department")
                         .WithMany("StudentProfiles")
                         .HasForeignKey("DepartmentId")
-<<<<<<< HEAD
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("CampusConnect.Models.User", "User")
-=======
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CampusConnect.Models.User", null)
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                         .WithOne("StudentProfile")
                         .HasForeignKey("CampusConnect.Models.StudentProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Department");
-<<<<<<< HEAD
-
-                    b.Navigation("User");
-=======
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                 });
 
             modelBuilder.Entity("CampusConnect.Models.StudentSkill", b =>
@@ -889,22 +617,9 @@ namespace CampusConnect.Migrations
 
             modelBuilder.Entity("CampusConnect.Models.Department", b =>
                 {
-<<<<<<< HEAD
-                    b.Navigation("FacultyProfiles");
-
                     b.Navigation("StudentProfiles");
                 });
 
-            modelBuilder.Entity("CampusConnect.Models.Grievance", b =>
-                {
-                    b.Navigation("Logs");
-                });
-
-=======
-                    b.Navigation("StudentProfiles");
-                });
-
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
             modelBuilder.Entity("CampusConnect.Models.Opportunity", b =>
                 {
                     b.Navigation("Applications");
@@ -924,11 +639,6 @@ namespace CampusConnect.Migrations
 
             modelBuilder.Entity("CampusConnect.Models.User", b =>
                 {
-<<<<<<< HEAD
-                    b.Navigation("FacultyProfile");
-
-=======
->>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))
                     b.Navigation("StudentProfile");
                 });
 #pragma warning restore 612, 618

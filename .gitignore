@@ -1,8 +1,15 @@
 bin/
 obj/
 .vs/
+<<<<<<< HEAD
 *.user
 *.suo
 work/
 *.db-shm
 *.db-wal
+=======
+*.db-shm
+*.db-wal
+*.user
+campusconnect.db
+>>>>>>> 147642b (feat(person-2): complete implementation of Person 2 scope (Weeks 1, 2 & 3))

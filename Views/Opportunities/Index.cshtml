@@ -1,0 +1,113 @@
+@model CampusConnect.Models.ViewModels.OpportunityFilterViewModel
+
+@{
+    ViewData["Title"] = "Discover Opportunities";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Campus Opportunities</h2>
+        <p class="text-muted mb-0">Browse events, research projects, internships, and hackathons.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary shadow-sm">+ Post Opportunity</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="get" asp-action="Index" class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control" placeholder="Search by title, keyword..." />
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    @foreach (var cat in Enum.GetValues<CampusConnect.Models.Enums.OpportunityCategory>())
+                    {
+                        <option value="@cat" selected="@(Model.Category == cat)">@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="mode" class="form-select">
+                    <option value="">All Modes</option>
+                    @foreach (var mode in Enum.GetValues<CampusConnect.Models.Enums.WorkMode>())
+                    {
+                        <option value="@mode" selected="@(Model.WorkMode == mode)">@mode</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Opportunities.Any())
+{
+    <div class="text-center py-5 bg-light rounded-3 border">
+        <h4 class="text-muted fw-normal">No opportunities found matching your criteria.</h4>
+        <p class="text-muted">Try adjusting your filters or search keywords.</p>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var opp in Model.Opportunities)
+        {
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm hover-shadow transition">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">@opp.Category</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">@opp.WorkMode</span>
+                        </div>
+                        <h5 class="card-title fw-bold text-dark mb-2">@opp.Title</h5>
+                        <p class="card-text text-muted small flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                            @opp.Description
+                        </p>
+
+                        @if (opp.RequiredSkills != null && opp.RequiredSkills.Any())
+                        {
+                            <div class="mb-3">
+                                @foreach (var skill in opp.RequiredSkills.Take(3))
+                                {
+                                    <span class="badge bg-light text-dark border me-1">@skill.Skill.SkillName</span>
+                                }
+                                @if (opp.RequiredSkills.Count > 3)
+                                {
+                                    <span class="badge bg-light text-muted border">+@(opp.RequiredSkills.Count - 3) more</span>
+                                }
+                            </div>
+                        }
+
+                        <div class="pt-3 border-top mt-auto d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted d-block">Deadline:</small>
+                                <span class="fw-semibold text-danger small">@opp.RegistrationDeadline.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <a asp-action="Details" asp-route-id="@opp.OpportunityId" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,123 @@
+@model CampusConnect.Models.Opportunity
+
+@{
+    ViewData["Title"] = Model.Title;
+    bool alreadyApplied = ViewBag.AlreadyApplied ?? false;
+    bool isExpired = Model.RegistrationDeadline < DateTime.UtcNow;
+}
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">&larr; Back to Opportunities</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 me-2">@Model.Category</span>
+                    <span class="badge bg-secondary-subtle text-secondary px-3 py-1">@Model.WorkMode</span>
+                </div>
+                <span class="badge @(Model.ApprovalStatus == CampusConnect.Models.Enums.ApprovalStatus.Approved ? "bg-success" : "bg-warning text-dark") px-3 py-1">
+                    @Model.ApprovalStatus
+                </span>
+            </div>
+
+            <h1 class="h2 fw-bold text-dark mb-3">@Model.Title</h1>
+
+            <div class="text-muted mb-4 fs-6">
+                <strong>Organizer:</strong> @(Model.Organizer?.Email ?? "Department Coordinator")
+                @if (Model.TargetDepartment != null)
+                {
+                    <span class="mx-2">&bull;</span>
+                    <strong>Department:</strong> @Model.TargetDepartment.DepartmentName
+                }
+            </div>
+
+            <h5 class="fw-bold mb-2">About the Opportunity</h5>
+            <p class="text-secondary leading-relaxed mb-4" style="white-space: pre-line;">@Model.Description</p>
+
+            <h5 class="fw-bold mb-3">Required Skills & Competencies</h5>
+            @if (Model.RequiredSkills != null && Model.RequiredSkills.Any())
+            {
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    @foreach (var skill in Model.RequiredSkills)
+                    {
+                        <span class="badge bg-light text-dark border fs-6 px-3 py-2">@skill.Skill.SkillName</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted fs-6 mb-4">No specific skills listed.</p>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 5.5rem;">
+            <h5 class="fw-bold mb-4">Key Details</h5>
+
+            <div class="mb-3 pb-3 border-bottom">
+                <small class="text-muted d-block">Stipend / Compensation</small>
+                <span class="fs-5 fw-semibold text-dark">@(string.IsNullOrWhiteSpace(Model.StipendSalary) ? "Unpaid / Volunteer" : Model.StipendSalary)</span>
+            </div>
+
+            <div class="mb-3 pb-3 border-bottom">
+                <small class="text-muted d-block">Registration Deadline</small>
+                <span class="fs-6 fw-semibold text-danger">@Model.RegistrationDeadline.ToString("MMMM dd, yyyy (HH:mm UTC)")</span>
+            </div>
+
+            @if (Model.EventDate.HasValue)
+            {
+                <div class="mb-3 pb-3 border-bottom">
+                    <small class="text-muted d-block">Event Date</small>
+                    <span class="fs-6 fw-semibold text-dark">@Model.EventDate.Value.ToString("MMMM dd, yyyy")</span>
+                </div>
+            }
+
+            @if (Model.Capacity.HasValue)
+            {
+                <div class="mb-4">
+                    <small class="text-muted d-block">Total Capacity</small>
+                    <span class="fs-6 fw-semibold text-dark">@Model.Capacity Positions</span>
+                </div>
+            }
+
+            @if (isExpired)
+            {
+                <button class="btn btn-secondary btn-lg w-100 disabled" disabled>Registration Closed</button>
+            }
+            else if (alreadyApplied)
+            {
+                <div class="alert alert-info mb-0 text-center fw-semibold">
+                    ✓ You have applied for this opportunity
+                </div>
+            }
+            else
+            {
+                <form asp-controller="Applications" asp-action="Apply" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="opportunityId" value="@Model.OpportunityId" />
+                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow">Apply Now</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

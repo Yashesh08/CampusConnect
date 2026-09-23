@@ -1,0 +1,117 @@
+@model IEnumerable<CampusConnect.Models.Application>
+
+@{
+    var opportunity = ViewBag.Opportunity as CampusConnect.Models.Opportunity;
+    ViewData["Title"] = $"Applicants - {opportunity?.Title}";
+}
+
+<div class="mb-3">
+    <a asp-action="Dashboard" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Applicants for: @(opportunity?.Title)</h2>
+        <p class="text-muted mb-0">Total Applications: <strong>@Model.Count()</strong> &bull; Deadline: <strong>@opportunity?.RegistrationDeadline.ToString("MMM dd, yyyy")</strong></p>
+    </div>
+    @if (opportunity != null && Model.Any())
+    {
+        <a asp-action="ExportCsv" asp-route-id="@opportunity.OpportunityId" class="btn btn-outline-success">
+            &darr; Export CSV
+        </a>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 bg-light rounded-3 border">
+        <h4 class="text-muted fw-normal">No applications received yet.</h4>
+        <p class="text-muted">Once students submit applications, they will appear here for review.</p>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Applicant</th>
+                        <th>Batch / Dept</th>
+                        <th>Applied Date</th>
+                        <th>Current Status</th>
+                        <th>Remarks</th>
+                        <th class="text-end">Update Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model)
+                    {
+                        var studentName = app.Student?.User?.Email ?? "Student Applicant";
+                        <tr>
+                            <td>
+                                <strong>@studentName</strong>
+                                @if (app.Student?.User != null)
+                                {
+                                    <br /><small class="text-muted">@app.Student.User.Email</small>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border me-1">Batch: @(app.Student?.BatchYear.ToString() ?? "N/A")</span>
+                            </td>
+                            <td class="text-muted small">@app.AppliedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                            <td>
+                                @switch (app.Status)
+                                {
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Applied:
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1">Applied</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.UnderReview:
+                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1">Under Review</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Shortlisted:
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">Shortlisted</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Selected:
+                                        <span class="badge bg-success px-3 py-1">Selected</span>
+                                        break;
+                                    case CampusConnect.Models.Enums.ApplicationStatus.Rejected:
+                                        <span class="badge bg-danger px-3 py-1">Rejected</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <span class="fst-italic small text-secondary">@(string.IsNullOrWhiteSpace(app.OrganizerRemarks) ? "-" : app.OrganizerRemarks)</span>
+                            </td>
+                            <td class="text-end">
+                                <form asp-action="UpdateStatus" method="post" class="d-inline-flex gap-1 align-items-center justify-content-end">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="applicationId" value="@app.ApplicationId" />
+                                    
+                                    <select name="status" class="form-select form-select-sm" style="width: 140px;">
+                                        @foreach (var statusVal in Enum.GetValues<CampusConnect.Models.Enums.ApplicationStatus>())
+                                        {
+                                            <option value="@statusVal" selected="@(app.Status == statusVal)">@statusVal</option>
+                                        }
+                                    </select>
+                                    
+                                    <input type="text" name="remarks" value="@app.OrganizerRemarks" placeholder="Remarks..." class="form-control form-control-sm" style="width: 130px;" />
+                                    
+                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
