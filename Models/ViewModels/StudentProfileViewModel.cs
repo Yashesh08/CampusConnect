@@ -15,7 +15,7 @@ public class StudentProfileViewModel
     
     [Required, Display(Name = "Batch Year")]
     [Range(2020, 2030)]
-    public int? BatchYear { get; set; }
+    public int BatchYear { get; set; }
     
     public string? Bio { get; set; }
     

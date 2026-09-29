@@ -98,7 +98,6 @@ public class FacultyProfilesController : Controller
 
         var model = new FacultyProfileViewModel
         {
-            FacultyProfileId = p.FacultyProfileId,
             DepartmentId = p.DepartmentId,
             Designation = p.Designation,
             CabinNumber = p.CabinNumber
@@ -123,7 +122,7 @@ public class FacultyProfilesController : Controller
         }
 
         var profile = await _repository.GetByUserIdAsync(user.Id);
-        if (profile == null || profile.FacultyProfileId != model.FacultyProfileId) return Forbid();
+        if (profile == null) return Forbid();
 
         profile.DepartmentId = model.DepartmentId;
         profile.Designation = model.Designation;

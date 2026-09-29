@@ -101,7 +101,14 @@ public class StudentProfilesController : Controller
         string? resumeUrl = null;
         if (model.ResumeFile != null)
         {
-            resumeUrl = await HandleFileUpload(model.ResumeFile);
+            var (url, error) = await HandleFileUpload(model.ResumeFile);
+            if (error != null) {
+                ModelState.AddModelError("ResumeFile", error);
+                var depts = await _deptRepo.GetAllAsync();
+                ViewBag.Departments = new SelectList(depts, "DepartmentId", "DepartmentName");
+                return View(model);
+            }
+            resumeUrl = url;
         }
 
         var profile = new StudentProfile
@@ -109,7 +116,7 @@ public class StudentProfilesController : Controller
             UserId = user.Id,
             RollNumber = model.RollNumber,
             DepartmentId = model.DepartmentId,
-            BatchYear = model.BatchYear ?? 0,
+            BatchYear = model.BatchYear,
             Bio = model.Bio,
             GitHubUrl = model.GitHubUrl,
             LinkedInUrl = model.LinkedInUrl,
@@ -166,14 +173,21 @@ public class StudentProfilesController : Controller
 
         profile.RollNumber = model.RollNumber;
         profile.DepartmentId = model.DepartmentId;
-        profile.BatchYear = model.BatchYear ?? 0;
+        profile.BatchYear = model.BatchYear;
         profile.Bio = model.Bio;
         profile.GitHubUrl = model.GitHubUrl;
         profile.LinkedInUrl = model.LinkedInUrl;
 
         if (model.ResumeFile != null)
         {
-            profile.ResumeUrl = await HandleFileUpload(model.ResumeFile);
+            var (url, error) = await HandleFileUpload(model.ResumeFile);
+            if (error != null) {
+                ModelState.AddModelError("ResumeFile", error);
+                var depts = await _deptRepo.GetAllAsync();
+                ViewBag.Departments = new SelectList(depts, "DepartmentId", "DepartmentName", model.DepartmentId);
+                return View(model);
+            }
+            profile.ResumeUrl = url;
         }
 
         profile.ProfileCompletionScore = CalculateCompletionScore(profile);
@@ -182,13 +196,13 @@ public class StudentProfilesController : Controller
         return RedirectToAction("Index", "Home");
     }
 
-    private async Task<string?> HandleFileUpload(IFormFile file)
+    private async Task<(string? url, string? error)> HandleFileUpload(IFormFile file)
     {
         if (file.Length > 0)
         {
-            if (file.Length > 5 * 1024 * 1024) throw new InvalidOperationException("File size cannot exceed 5MB.");
+            if (file.Length > 5 * 1024 * 1024) return (null, "File size cannot exceed 5MB.");
             var ext = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (ext != ".pdf" && ext != ".docx") throw new InvalidOperationException("Only PDF and DOCX files are allowed.");
+            if (ext != ".pdf" && ext != ".docx") return (null, "Only PDF and DOCX files are allowed.");
 
             string uploadsFolder = Path.Combine(_env.WebRootPath, "resumes");
             Directory.CreateDirectory(uploadsFolder);
@@ -198,9 +212,9 @@ public class StudentProfilesController : Controller
             {
                 await file.CopyToAsync(fileStream);
             }
-            return "/resumes/" + uniqueFileName;
+            return ("/resumes/" + uniqueFileName, null);
         }
-        return null;
+        return (null, null);
     }
 
     private int CalculateCompletionScore(StudentProfile profile)

@@ -151,11 +151,11 @@ public class OpportunitiesController : Controller
     {
         
         var opp = await _opportunityRepository.GetByIdAsync(id);
-        if (User.IsInRole("Hod") && !User.IsInRole("Admin")) {
+        if (User.IsInRole(UserRole.Hod.ToString()) && !User.IsInRole(UserRole.Admin.ToString())) {
             var user = await _userManager.GetUserAsync(User);
             var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
             var facProfile = facRepo != null ? await facRepo.GetByUserIdAsync(user.Id) : null;
-            if (facProfile == null || (opp?.TargetDepartmentId != null && opp.TargetDepartmentId != facProfile.DepartmentId)) return Forbid();
+            if (facProfile == null || opp?.TargetDepartmentId == null || opp.TargetDepartmentId != facProfile.DepartmentId) return Forbid();
         }
         await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Approved);
 
@@ -171,11 +171,11 @@ public class OpportunitiesController : Controller
     {
         
         var opp = await _opportunityRepository.GetByIdAsync(id);
-        if (User.IsInRole("Hod") && !User.IsInRole("Admin")) {
+        if (User.IsInRole(UserRole.Hod.ToString()) && !User.IsInRole(UserRole.Admin.ToString())) {
             var user = await _userManager.GetUserAsync(User);
             var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
             var facProfile = facRepo != null ? await facRepo.GetByUserIdAsync(user.Id) : null;
-            if (facProfile == null || (opp?.TargetDepartmentId != null && opp.TargetDepartmentId != facProfile.DepartmentId)) return Forbid();
+            if (facProfile == null || opp?.TargetDepartmentId == null || opp.TargetDepartmentId != facProfile.DepartmentId) return Forbid();
         }
         await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Rejected);
 
