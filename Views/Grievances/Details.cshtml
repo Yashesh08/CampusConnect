@@ -1,0 +1,613 @@
+@model CampusConnect.Models.Grievance
+@using CampusConnect.Models.Enums
+
+@{
+    ViewData["Title"] = $"Ticket #{Model.GrievanceId.ToString()[..8].ToUpper()}";
+    bool isPrivileged = ViewBag.IsPrivileged == true;
+    bool isOfficer = ViewBag.IsOfficer == true;
+    bool isAssignedOfficer = ViewBag.IsAssignedOfficer == true;
+    bool canManage = isPrivileged || isAssignedOfficer;
+    bool isOverdue = Model.SlaDueAt.HasValue && Model.SlaDueAt < DateTime.UtcNow && Model.Status != GrievanceStatus.Resolved;
+    var officers = ViewBag.AvailableOfficers as List<CampusConnect.Models.User> ?? new List<CampusConnect.Models.User>();
+
+    string StatusBadgeClass(GrievanceStatus s) => s switch
+    {
+        GrievanceStatus.Submitted    => "bg-secondary text-white",
+        GrievanceStatus.Acknowledged => "bg-info text-dark",
+        GrievanceStatus.InProgress   => "bg-primary text-white",
+        GrievanceStatus.Escalated    => "bg-danger text-white",
+        GrievanceStatus.Resolved     => "bg-success text-white",
+        _                            => "bg-secondary text-white"
+    };
+
+    string PriorityBadgeClass(GrievancePriority p) => p switch
+    {
+        GrievancePriority.Critical => "bg-danger text-white",
+        GrievancePriority.High     => "bg-warning text-dark",
+        GrievancePriority.Medium   => "bg-primary text-white",
+        GrievancePriority.Low      => "bg-secondary text-white",
+        _                          => "bg-secondary text-white"
+    };
+
+    // Workflow steps calculation
+    int currentStep = Model.Status switch
+    {
+        GrievanceStatus.Submitted    => 1,
+        GrievanceStatus.Acknowledged => 2,
+        GrievanceStatus.InProgress   => 3,
+        GrievanceStatus.Resolved     => 4,
+        GrievanceStatus.Escalated    => 3, // parallel branched
+        _                            => 1
+    };
+}
+
+<!-- Top navigation breadcrumb & quick links -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="fa-solid fa-arrow-left me-1"></i> All Grievances
+        </a>
+        <a asp-action="Tracker" asp-route-ticketId="@Model.GrievanceId.ToString()[..8].ToUpper()" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+            <i class="fa-solid fa-route me-1"></i> Student Tracker
+        </a>
+        @if (isOfficer)
+        {
+            <a asp-action="OfficerDashboard" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                <i class="fa-solid fa-briefcase me-1"></i> Officer Desk
+            </a>
+        }
+        @if (isPrivileged)
+        {
+            <a asp-action="Escalations" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> Escalations
+            </a>
+        }
+    </div>
+
+    <div>
+        <span class="text-muted small">Ticket Reference:</span>
+        <code class="fs-6 fw-bold px-2 py-1 bg-light border rounded-3 ms-1 text-primary">#@Model.GrievanceId.ToString()[..8].ToUpper()</code>
+    </div>
+</div>
+
+<!-- Workflow Stepper Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+    <div class="card-body p-4 bg-light bg-gradient">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-uppercase text-muted small mb-0 tracking-wider">
+                <i class="fa-solid fa-network-wired text-primary me-2"></i> Workflow Progression
+            </h6>
+            @if (Model.Status == GrievanceStatus.Escalated)
+            {
+                <span class="badge bg-danger px-3 py-2 rounded-pill animate-pulse">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Ticket Escalated to HOD
+                </span>
+            }
+            else if (Model.Status == GrievanceStatus.Resolved)
+            {
+                <span class="badge bg-success px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-circle-check me-1"></i> Successfully Resolved
+                </span>
+            }
+        </div>
+
+        <div class="workflow-stepper">
+            <!-- Step 1: Submitted -->
+            <div class="step-item @(currentStep >= 1 ? "completed" : "") @(Model.Status == GrievanceStatus.Submitted ? "active" : "")">
+                <div class="step-circle"><i class="fa-solid fa-file-circle-check"></i></div>
+                <div class="step-title">1. Submitted</div>
+                <div class="step-sub">@Model.CreatedAt.ToString("MMM dd")</div>
+            </div>
+
+            <div class="step-line @(currentStep >= 2 ? "completed" : "")"></div>
+
+            <!-- Step 2: Acknowledged -->
+            <div class="step-item @(currentStep >= 2 ? "completed" : "") @(Model.Status == GrievanceStatus.Acknowledged ? "active" : "")">
+                <div class="step-circle"><i class="fa-solid fa-envelope-open-text"></i></div>
+                <div class="step-title">2. Acknowledged</div>
+                <div class="step-sub">@(Model.AssignedToUser != null ? "Officer Assigned" : "Received")</div>
+            </div>
+
+            <div class="step-line @(currentStep >= 3 ? "completed" : "")"></div>
+
+            <!-- Step 3: In Progress -->
+            <div class="step-item @(currentStep >= 3 ? "completed" : "") @(Model.Status == GrievanceStatus.InProgress ? "active" : "")">
+                <div class="step-circle"><i class="fa-solid fa-gears"></i></div>
+                <div class="step-title">3. In Progress</div>
+                <div class="step-sub">Investigation</div>
+            </div>
+
+            <div class="step-line @(currentStep >= 4 ? "completed" : "")"></div>
+
+            <!-- Step 4: Resolved / Escalated -->
+            @if (Model.Status == GrievanceStatus.Escalated)
+            {
+                <div class="step-item escalated active">
+                    <div class="step-circle bg-danger text-white"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                    <div class="step-title text-danger fw-bold">4. Escalated</div>
+                    <div class="step-sub text-danger">HOD Intervention</div>
+                </div>
+            }
+            else
+            {
+                <div class="step-item @(currentStep >= 4 ? "completed active" : "")">
+                    <div class="step-circle"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="step-title">4. Resolved</div>
+                    <div class="step-sub">@(Model.ResolvedAt.HasValue ? Model.ResolvedAt.Value.ToString("MMM dd") : "Final Target")</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ─── Main Details & Audit Timeline ─── -->
+    <div class="col-lg-8">
+        <!-- Ticket Information -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="badge rounded-pill @StatusBadgeClass(Model.Status) px-3 py-2 fs-6">
+                        @Model.Status
+                    </span>
+                    <span class="badge rounded-pill @PriorityBadgeClass(Model.Priority) px-3 py-2 fs-6">
+                        @Model.Priority Priority
+                    </span>
+                    @if (Model.IsAnonymous)
+                    {
+                        <span class="badge rounded-pill bg-dark text-white px-3 py-2 fs-6">
+                            <i class="fa-solid fa-user-secret me-1"></i> Anonymous Submission
+                        </span>
+                    }
+                    @if (isOverdue)
+                    {
+                        <span class="badge rounded-pill bg-danger text-white px-3 py-2 fs-6 animate-pulse">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> SLA Overdue
+                        </span>
+                    }
+                </div>
+
+                <h3 class="fw-bold text-dark mb-1">@Model.Category Grievance</h3>
+                <p class="text-muted mb-4">
+                    <i class="fa-solid fa-building-columns text-primary me-1"></i>
+                    Assigned Department: <strong class="text-dark">@(Model.Department?.DepartmentName ?? "General Administration")</strong>
+                    (@(Model.Department?.DepartmentCode ?? "GEN"))
+                </p>
+
+                <!-- Description -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-secondary text-uppercase small tracking-wider mb-2">
+                        <i class="fa-solid fa-align-left text-primary me-1"></i> Description of Incident / Issue
+                    </h6>
+                    <div class="p-3 bg-light rounded-3 text-dark lh-lg border" style="white-space:pre-wrap;font-size:0.95rem;">@Model.Description</div>
+                </div>
+
+                <!-- Meta Grid -->
+                <div class="row g-3 p-3 rounded-4 bg-light border">
+                    <div class="col-sm-6">
+                        <div class="d-flex gap-2 align-items-start">
+                            <div class="rounded-3 bg-white p-2 border text-primary">
+                                <i class="fa-regular fa-calendar-days fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Date Submitted</div>
+                                <div class="fw-bold text-dark">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm") UTC</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="d-flex gap-2 align-items-start">
+                            <div class="rounded-3 bg-white p-2 border @(isOverdue ? "text-danger" : "text-primary")">
+                                <i class="fa-solid fa-stopwatch-20 fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">SLA Target Resolution</div>
+                                @if (Model.SlaDueAt.HasValue)
+                                {
+                                    <div class="fw-bold @(isOverdue ? "text-danger" : "text-dark")">
+                                        @Model.SlaDueAt.Value.ToString("MMM dd, yyyy")
+                                        @if (isOverdue)
+                                        {
+                                            <span class="badge bg-danger ms-1">BREACHED</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted">—</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="d-flex gap-2 align-items-start">
+                            <div class="rounded-3 bg-white p-2 border text-primary">
+                                <i class="fa-solid fa-user-shield fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Handling Officer</div>
+                                <div class="fw-bold text-dark">
+                                    @(Model.AssignedToUser?.Email ?? "Not Yet Assigned")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="d-flex gap-2 align-items-start">
+                            <div class="rounded-3 bg-white p-2 border text-primary">
+                                <i class="fa-solid fa-user fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Complainant</div>
+                                <div class="fw-bold text-dark">
+                                    @if (Model.IsAnonymous)
+                                    {
+                                        <span class="text-muted"><i class="fa-solid fa-user-secret me-1"></i> Anonymous</span>
+                                    }
+                                    else
+                                    {
+                                        @(Model.ComplainantUser?.Email ?? "Student")
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── grievance_logs Audit Trail ─── -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i> Audit Trail & Activity Log
+                    </h5>
+                    <span class="badge bg-light text-muted border">@(Model.Logs?.Count ?? 0) Events Recorded</span>
+                </div>
+
+                @if (Model.Logs == null || !Model.Logs.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-clipboard-list fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="mb-0 small">No audit log entries recorded yet.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var log in Model.Logs.OrderBy(l => l.Timestamp))
+                        {
+                            <div class="timeline-item d-flex gap-3 pb-4">
+                                <div class="timeline-dot-wrapper flex-shrink-0">
+                                    <div class="timeline-dot bg-primary text-white shadow-sm">
+                                        <i class="fa-solid fa-check small"></i>
+                                    </div>
+                                </div>
+                                <div class="timeline-content flex-grow-1 bg-light rounded-4 p-3 border">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+                                        <span class="fw-bold text-dark">
+                                            Status changed to <span class="badge bg-secondary">@log.StatusChangedTo</span>
+                                        </span>
+                                        <small class="text-muted">
+                                            <i class="fa-regular fa-clock me-1"></i>
+                                            @log.Timestamp.ToString("MMM dd, yyyy HH:mm") UTC
+                                        </small>
+                                    </div>
+                                    <div class="small text-muted mb-2">
+                                        <i class="fa-solid fa-user-circle me-1"></i> Action taken by:
+                                        <strong class="text-secondary">@(log.UpdatedByUser?.Email ?? "System / Staff")</strong>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(log.ResolutionNote))
+                                    {
+                                        <div class="p-2 bg-white rounded-3 border small text-dark mt-2">
+                                            <i class="fa-solid fa-quote-left text-muted me-1"></i>
+                                            @log.ResolutionNote
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Action Panels ─── -->
+    <div class="col-lg-4">
+        <!-- Quick Status Workflow Transitions -->
+        @if (canManage)
+        {
+            <div class="card border-0 shadow-sm rounded-4 mb-4 border-top border-4 border-primary">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3 text-dark">
+                        <i class="fa-solid fa-arrows-spin text-primary me-2"></i> Workflow Actions
+                    </h5>
+                    <p class="small text-muted mb-3">Advance the grievance along its resolution path:</p>
+
+                    <div class="d-grid gap-2 mb-4">
+                        @if (Model.Status == GrievanceStatus.Submitted)
+                        {
+                            <form asp-action="UpdateStatus" asp-route-id="@Model.GrievanceId" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="newStatus" value="@GrievanceStatus.Acknowledged" />
+                                <input type="hidden" name="note" value="Acknowledged ticket. Under initial review." />
+                                <button type="submit" class="btn btn-info text-dark w-100 rounded-3 fw-semibold py-2">
+                                    <i class="fa-solid fa-envelope-open-text me-1"></i> 1. Acknowledge Ticket
+                                </button>
+                            </form>
+                        }
+
+                        @if (Model.Status == GrievanceStatus.Submitted || Model.Status == GrievanceStatus.Acknowledged)
+                        {
+                            <form asp-action="UpdateStatus" asp-route-id="@Model.GrievanceId" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="newStatus" value="@GrievanceStatus.InProgress" />
+                                <input type="hidden" name="note" value="Work started on grievance resolution." />
+                                <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold py-2">
+                                    <i class="fa-solid fa-gears me-1"></i> 2. Mark In Progress
+                                </button>
+                            </form>
+                        }
+
+                        @if (Model.Status == GrievanceStatus.InProgress || Model.Status == GrievanceStatus.Escalated)
+                        {
+                            <!-- Resolve Button triggers modal or direct form -->
+                            <button type="button" class="btn btn-success w-100 rounded-3 fw-semibold py-2" data-bs-toggle="collapse" data-bs-target="#resolveBox">
+                                <i class="fa-solid fa-circle-check me-1"></i> Mark as Resolved
+                            </button>
+                            <div class="collapse mt-2" id="resolveBox">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <form asp-action="UpdateStatus" asp-route-id="@Model.GrievanceId" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="newStatus" value="@GrievanceStatus.Resolved" />
+                                        <label class="form-label small fw-semibold">Resolution Summary <span class="text-danger">*</span></label>
+                                        <textarea name="note" class="form-control form-control-sm mb-2" rows="3" required placeholder="Describe the resolution taken…"></textarea>
+                                        <button type="submit" class="btn btn-success btn-sm w-100 rounded-3">Confirm Resolution</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.Status != GrievanceStatus.Resolved && Model.Status != GrievanceStatus.Escalated)
+                        {
+                            <!-- Escalate Button triggers prompt -->
+                            <button type="button" class="btn btn-outline-danger w-100 rounded-3 fw-semibold py-2" data-bs-toggle="collapse" data-bs-target="#escalateBox">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> Escalate to HOD
+                            </button>
+                            <div class="collapse mt-2" id="escalateBox">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <form asp-action="UpdateStatus" asp-route-id="@Model.GrievanceId" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="newStatus" value="@GrievanceStatus.Escalated" />
+                                        <label class="form-label small fw-semibold">Reason for Escalation</label>
+                                        <textarea name="note" class="form-control form-control-sm mb-2" rows="2" placeholder="Specify why this requires HOD intervention…"></textarea>
+                                        <button type="submit" class="btn btn-danger btn-sm w-100 rounded-3">Confirm Escalation</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.Status == GrievanceStatus.Resolved && isPrivileged)
+                        {
+                            <form asp-action="UpdateStatus" asp-route-id="@Model.GrievanceId" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="newStatus" value="@GrievanceStatus.InProgress" />
+                                <input type="hidden" name="note" value="Ticket re-opened for further investigation." />
+                                <button type="submit" class="btn btn-outline-secondary w-100 rounded-3 btn-sm">
+                                    <i class="fa-solid fa-rotate-left me-1"></i> Re-open Ticket
+                                </button>
+                            </form>
+                        }
+                    </div>
+
+                    <!-- Custom Status Override (Privileged) -->
+                    @if (isPrivileged)
+                    {
+                        <hr class="my-3" />
+                        <h6 class="fw-bold small text-muted text-uppercase mb-2">Administrative Status Override</h6>
+                        <form asp-action="UpdateStatus" asp-route-id="@Model.GrievanceId" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-2">
+                                <select name="newStatus" class="form-select form-select-sm rounded-3">
+                                    @foreach (var s in Enum.GetValues<GrievanceStatus>())
+                                    {
+                                        if (Model.Status == s)
+                                        {
+                                            <option value="@s" selected>@s (Current)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" name="note" class="form-control form-control-sm rounded-3" placeholder="Optional audit note…" />
+                            </div>
+                            <button type="submit" class="btn btn-secondary btn-sm w-100 rounded-3">
+                                Apply Status Override
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Officer Assignment Panel -->
+        @if (isPrivileged || (isOfficer && Model.AssignedToUserId == null))
+        {
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3 text-dark">
+                        <i class="fa-solid fa-user-plus text-primary me-2"></i> Assign Handler
+                    </h5>
+
+                    @if (isPrivileged && officers.Any())
+                    {
+                        <form asp-action="Assign" asp-route-id="@Model.GrievanceId" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Select Officer / Faculty</label>
+                                <select name="assignedToUserId" class="form-select rounded-3" required>
+                                    <option value="">-- Choose Officer --</option>
+                                    @foreach (var officer in officers)
+                                    {
+                                        if (Model.AssignedToUserId == officer.Id)
+                                        {
+                                            <option value="@officer.Id" selected>@officer.Email (@officer.Role)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@officer.Id">@officer.Email (@officer.Role)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" name="note" class="form-control form-control-sm rounded-3" placeholder="Assignment note (optional)…" />
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 rounded-3">
+                                <i class="fa-solid fa-user-check me-1"></i> Update Handler
+                            </button>
+                        </form>
+                    }
+                    else if (Model.AssignedToUserId == null)
+                    {
+                        <!-- Officer Self-Assign -->
+                        <form asp-action="Assign" asp-route-id="@Model.GrievanceId" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="assignedToUserId" value="@ViewBag.CurrentUserId" />
+                            <input type="hidden" name="note" value="Officer picked up unassigned grievance." />
+                            <p class="small text-muted mb-3">This grievance is currently unassigned. You can claim it to become the handling officer.</p>
+                            <button type="submit" class="btn btn-primary w-100 rounded-3">
+                                <i class="fa-solid fa-hand-holding-hand me-1"></i> Claim & Handle This Grievance
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="small text-muted mb-0">Currently assigned to <strong>@Model.AssignedToUser?.Email</strong>.</p>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- SLA Policy Reference -->
+        <div class="card border-0 rounded-4 shadow-sm bg-white">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-dark">
+                    <i class="fa-solid fa-stopwatch text-primary me-2"></i> SLA Resolution Windows
+                </h6>
+                <div class="d-flex flex-column gap-2 small">
+                    <div class="d-flex justify-content-between p-2 rounded-3 bg-light">
+                        <span class="badge bg-danger">Critical</span>
+                        <span class="fw-semibold">1 Business Day</span>
+                    </div>
+                    <div class="d-flex justify-content-between p-2 rounded-3 bg-light">
+                        <span class="badge bg-warning text-dark">High</span>
+                        <span class="fw-semibold">3 Business Days</span>
+                    </div>
+                    <div class="d-flex justify-content-between p-2 rounded-3 bg-light">
+                        <span class="badge bg-primary text-white">Medium</span>
+                        <span class="fw-semibold">5 Business Days</span>
+                    </div>
+                    <div class="d-flex justify-content-between p-2 rounded-3 bg-light">
+                        <span class="badge bg-secondary text-white">Low</span>
+                        <span class="fw-semibold">10 Business Days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .workflow-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding: 10px 0;
+    }
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        min-width: 90px;
+        text-align: center;
+    }
+    .step-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: #e2e8f0;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .step-item.completed .step-circle {
+        background-color: #10b981;
+        color: #fff;
+    }
+    .step-item.active .step-circle {
+        background-color: #3b82f6;
+        color: #fff;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+    }
+    .step-item.escalated.active .step-circle {
+        background-color: #ef4444;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+    }
+    .step-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    .step-sub {
+        font-size: 0.72rem;
+        color: #94a3b8;
+    }
+    .step-line {
+        flex-grow: 1;
+        height: 4px;
+        background-color: #e2e8f0;
+        margin-top: -24px;
+        z-index: 1;
+        position: relative;
+    }
+    .step-line.completed {
+        background-color: #10b981;
+    }
+    .timeline-item {
+        position: relative;
+    }
+    .timeline-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+</style>
