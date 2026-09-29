@@ -1,0 +1,296 @@
+@model CampusConnect.Models.ViewModels.GrievanceEscalationViewModel
+@using CampusConnect.Models.Enums
+
+@{
+    ViewData["Title"] = "HOD Escalations & SLA Center";
+
+    string StatusBadgeClass(GrievanceStatus s) => s switch
+    {
+        GrievanceStatus.Submitted    => "bg-secondary text-white",
+        GrievanceStatus.Acknowledged => "bg-info text-dark",
+        GrievanceStatus.InProgress   => "bg-primary text-white",
+        GrievanceStatus.Escalated    => "bg-danger text-white",
+        GrievanceStatus.Resolved     => "bg-success text-white",
+        _                            => "bg-secondary text-white"
+    };
+
+    string PriorityBadgeClass(GrievancePriority p) => p switch
+    {
+        GrievancePriority.Critical => "bg-danger text-white",
+        GrievancePriority.High     => "bg-warning text-dark",
+        GrievancePriority.Medium   => "bg-primary text-white",
+        GrievancePriority.Low      => "bg-secondary text-white",
+        _                          => "bg-secondary text-white"
+    };
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="fw-bold mb-1 text-danger">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> HOD Escalation & SLA Center
+        </h1>
+        <p class="text-muted mb-0">High-priority executive oversight dashboard for escalated tickets, SLA breaches, and officer reassignments.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-3">
+            <i class="fa-solid fa-list me-1"></i> All Grievances
+        </a>
+        <a asp-action="OfficerDashboard" class="btn btn-outline-primary rounded-3">
+            <i class="fa-solid fa-briefcase me-1"></i> Officer Desk
+        </a>
+    </div>
+</div>
+
+<!-- Escalation Overview Metrics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white border-start border-4 border-danger">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase tracking-wider">Active Escalations</div>
+                    <div class="fs-1 fw-bold text-danger">@Model.TotalEscalated</div>
+                    <div class="small text-muted">Awaiting HOD intervention</div>
+                </div>
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3 text-danger fs-2">
+                    <i class="fa-solid fa-fire"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white border-start border-4 border-warning">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase tracking-wider">SLA Overdue Breaches</div>
+                    <div class="fs-1 fw-bold text-warning text-dark">@Model.TotalOverdue</div>
+                    <div class="small text-muted">Resolution target exceeded</div>
+                </div>
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning text-dark fs-2">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white border-start border-4 border-dark">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase tracking-wider">Critical Priority Unresolved</div>
+                    <div class="fs-1 fw-bold text-dark">@Model.TotalCritical</div>
+                    <div class="small text-muted">1-business day SLA tier</div>
+                </div>
+                <div class="rounded-circle bg-dark bg-opacity-10 p-3 text-dark fs-2">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 1: Active Escalated Grievances -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-danger">
+                <i class="fa-solid fa-fire-flame-curved me-2"></i> Formally Escalated Grievances (@Model.TotalEscalated)
+            </h5>
+            <span class="badge bg-danger rounded-pill px-3 py-2">Requires Executive Action</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">These tickets were escalated by handling officers due to complexity, delays, or lack of resolution.</p>
+    </div>
+    <div class="card-body p-4">
+        @if (!Model.EscalatedGrievances.Any())
+        {
+            <div class="text-center py-4">
+                <i class="fa-solid fa-circle-check fa-3x text-success mb-2"></i>
+                <h6 class="fw-bold text-success">No Pending Escalations</h6>
+                <p class="text-muted small mb-0">All department grievances are progressing normally within officer queues.</p>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var g in Model.EscalatedGrievances)
+                {
+                    var lastLog = g.Logs?.OrderByDescending(l => l.Timestamp).FirstOrDefault();
+                    <div class="card border-0 bg-light rounded-4 p-4 border-start border-4 border-danger">
+                        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+                            <div class="flex-grow-1">
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                    <code class="fw-bold fs-6 text-danger">#@g.GrievanceId.ToString()[..8].ToUpper()</code>
+                                    <span class="badge rounded-pill bg-danger">Escalated</span>
+                                    <span class="badge rounded-pill @PriorityBadgeClass(g.Priority)">@g.Priority Priority</span>
+                                    <span class="badge rounded-pill bg-secondary">@(g.Department?.DepartmentCode ?? "GEN")</span>
+                                    @if (g.IsAnonymous)
+                                    {
+                                        <span class="badge rounded-pill bg-dark">
+                                            <i class="fa-solid fa-user-secret me-1"></i> Anonymous
+                                        </span>
+                                    }
+                                </div>
+
+                                <h5 class="fw-bold text-dark mb-1">@g.Category</h5>
+                                <p class="text-muted small mb-2" style="max-width: 700px;">
+                                    @g.Description
+                                </p>
+
+                                @if (!string.IsNullOrWhiteSpace(lastLog?.ResolutionNote))
+                                {
+                                    <div class="p-2 bg-white rounded-3 border border-danger border-opacity-50 small mb-2 text-danger">
+                                        <i class="fa-solid fa-quote-left me-1"></i> <strong>Escalation Reason:</strong> @lastLog.ResolutionNote
+                                    </div>
+                                }
+
+                                <div class="d-flex flex-wrap gap-3 small text-muted">
+                                    <span>
+                                        <i class="fa-solid fa-user-shield me-1"></i>
+                                        Officer: <strong>@(g.AssignedToUser?.Email ?? "Unassigned")</strong>
+                                    </span>
+                                    <span>
+                                        <i class="fa-solid fa-hourglass-half me-1 text-danger"></i>
+                                        Target: @(g.SlaDueAt?.ToString("MMM dd, yyyy") ?? "—")
+                                    </span>
+                                    <span>
+                                        <i class="fa-regular fa-clock me-1"></i>
+                                        Submitted @g.CreatedAt.ToString("MMM dd, yyyy")
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- HOD Executive Action Controls -->
+                            <div class="d-flex flex-column gap-2 flex-shrink-0" style="min-width: 220px;">
+                                <!-- Reassign dropdown button -->
+                                <button type="button" class="btn btn-outline-primary btn-sm rounded-3 text-start"
+                                        data-bs-toggle="collapse" data-bs-target="#reassign-@g.GrievanceId">
+                                    <i class="fa-solid fa-user-plus me-1"></i> Reassign Officer…
+                                </button>
+
+                                <!-- Direct HOD Resolve button -->
+                                <button type="button" class="btn btn-success btn-sm rounded-3 text-start"
+                                        data-bs-toggle="collapse" data-bs-target="#resolve-@g.GrievanceId">
+                                    <i class="fa-solid fa-circle-check me-1"></i> HOD Direct Resolution…
+                                </button>
+
+                                <a asp-action="Details" asp-route-id="@g.GrievanceId" class="btn btn-outline-secondary btn-sm rounded-3 text-start">
+                                    <i class="fa-solid fa-timeline me-1"></i> Full Audit Trail
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Collapse: Reassign Officer -->
+                        <div class="collapse mt-3" id="reassign-@g.GrievanceId">
+                            <div class="p-3 bg-white rounded-3 border">
+                                <form asp-action="Assign" asp-route-id="@g.GrievanceId" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                    <label class="form-label small fw-semibold">Select New Officer</label>
+                                    <select name="assignedToUserId" class="form-select form-select-sm mb-2" required>
+                                        <option value="">-- Choose Officer --</option>
+                                        @foreach (var off in Model.AvailableOfficers)
+                                        {
+                                            <option value="@off.Id">@off.Email (@off.Role)</option>
+                                        }
+                                    </select>
+                                    <input type="text" name="note" class="form-control form-control-sm mb-2" placeholder="Reassignment instructions…" />
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-3">Confirm Reassignment</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Collapse: Direct Resolution -->
+                        <div class="collapse mt-3" id="resolve-@g.GrievanceId">
+                            <div class="p-3 bg-white rounded-3 border">
+                                <form asp-action="UpdateStatus" asp-route-id="@g.GrievanceId" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="newStatus" value="@GrievanceStatus.Resolved" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                    <label class="form-label small fw-semibold">HOD Executive Decision / Resolution Notes <span class="text-danger">*</span></label>
+                                    <textarea name="note" class="form-control form-control-sm mb-2" rows="2" required placeholder="Enter authoritative resolution notes…"></textarea>
+                                    <button type="submit" class="btn btn-success btn-sm rounded-3">Execute Direct Resolution</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- SECTION 2: SLA Overdue Breaches -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-warning text-dark">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i> SLA Overdue Breaches (@Model.TotalOverdue)
+            </h5>
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">Target Date Missed</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">Tickets where resolution has exceeded the mandated business-day SLA limit.</p>
+    </div>
+    <div class="card-body p-4">
+        @if (!Model.OverdueGrievances.Any())
+        {
+            <div class="text-center py-4">
+                <i class="fa-solid fa-stopwatch fa-3x text-success mb-2"></i>
+                <h6 class="fw-bold text-success">Zero SLA Breaches</h6>
+                <p class="text-muted small mb-0">All active grievances are operating strictly within their target SLA windows.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Assigned Officer</th>
+                            <th>SLA Due Date</th>
+                            <th>Breached By</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var od in Model.OverdueGrievances)
+                        {
+                            int daysOverdue = (int)(DateTime.UtcNow - (od.SlaDueAt ?? DateTime.UtcNow)).TotalDays;
+                            <tr>
+                                <td>
+                                    <code class="fw-bold text-primary">#@od.GrievanceId.ToString()[..8].ToUpper()</code>
+                                </td>
+                                <td>@od.Category</td>
+                                <td><span class="badge @PriorityBadgeClass(od.Priority)">@od.Priority</span></td>
+                                <td>
+                                    @if (od.AssignedToUser != null)
+                                    {
+                                        <span>@od.AssignedToUser.Email</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Unassigned</span>
+                                    }
+                                </td>
+                                <td class="small">@(od.SlaDueAt?.ToString("MMM dd, yyyy") ?? "—")</td>
+                                <td>
+                                    <span class="badge bg-danger rounded-pill px-2 py-1">
+                                        @(daysOverdue <= 0 ? "Today" : $"{daysOverdue} days")
+                                    </span>
+                                </td>
+                                <td><span class="badge @StatusBadgeClass(od.Status)">@od.Status</span></td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@od.GrievanceId" class="btn btn-outline-primary btn-sm rounded-3">
+                                        <i class="fa-solid fa-eye me-1"></i> Review
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

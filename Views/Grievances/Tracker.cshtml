@@ -1,0 +1,388 @@
+@model CampusConnect.Models.ViewModels.GrievanceTrackerViewModel
+@using CampusConnect.Models.Enums
+
+@{
+    ViewData["Title"] = "Grievance Tracker";
+    var selected = Model.SelectedGrievance;
+    bool isOverdue = selected?.SlaDueAt.HasValue == true && selected.SlaDueAt < DateTime.UtcNow && selected.Status != GrievanceStatus.Resolved;
+
+    string StatusBadgeClass(GrievanceStatus s) => s switch
+    {
+        GrievanceStatus.Submitted    => "bg-secondary text-white",
+        GrievanceStatus.Acknowledged => "bg-info text-dark",
+        GrievanceStatus.InProgress   => "bg-primary text-white",
+        GrievanceStatus.Escalated    => "bg-danger text-white",
+        GrievanceStatus.Resolved     => "bg-success text-white",
+        _                            => "bg-secondary text-white"
+    };
+
+    int currentStep = selected?.Status switch
+    {
+        GrievanceStatus.Submitted    => 1,
+        GrievanceStatus.Acknowledged => 2,
+        GrievanceStatus.InProgress   => 3,
+        GrievanceStatus.Resolved     => 4,
+        GrievanceStatus.Escalated    => 3,
+        _                            => 0
+    };
+}
+
+<!-- Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="fw-bold mb-1">
+            <i class="fa-solid fa-route text-primary me-2"></i> Student Grievance Tracker
+        </h1>
+        <p class="text-muted mb-0">Track real-time resolution progress, SLA timers, and officer audit logs for your tickets.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-3">
+            <i class="fa-solid fa-list me-1"></i> Grievances List
+        </a>
+        <a asp-action="Create" class="btn btn-primary rounded-3 shadow-sm px-4">
+            <i class="fa-solid fa-plus me-1"></i> New Grievance
+        </a>
+    </div>
+</div>
+
+<!-- Search Bar by Ticket ID -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-3 p-md-4">
+        <form method="get" asp-action="Tracker" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="ticketId" class="form-control border-start-0 ps-0"
+                           placeholder="Enter 8-digit Ticket Code (e.g. 3FA8C1D2 or full GUID) to track any submission…"
+                           value="@Model.SearchQuery" />
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100 rounded-3">
+                    <i class="fa-solid fa-crosshairs me-1"></i> Track Ticket
+                </button>
+                @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                {
+                    <a asp-action="Tracker" class="btn btn-outline-secondary rounded-3" title="Clear Search">
+                        <i class="fa-solid fa-xmark"></i>
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (selected == null)
+{
+    @if (Model.SearchAttempted)
+    {
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="fa-solid fa-circle-question fa-3x text-warning mb-3"></i>
+                <h5 class="fw-bold">No Ticket Found for "@Model.SearchQuery"</h5>
+                <p class="text-muted small mb-4">Double check the ticket reference code or view your submission history below.</p>
+                <a asp-action="Tracker" class="btn btn-outline-primary rounded-3">Reset Tracker</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="fa-solid fa-receipt fa-3x text-muted mb-3 opacity-50"></i>
+                <h5 class="fw-bold">No Grievances Submitted Yet</h5>
+                <p class="text-muted small mb-4">You have not submitted any grievances under this account.</p>
+                <a asp-action="Create" class="btn btn-primary rounded-3 px-4">Submit Your First Grievance</a>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="row g-4">
+        <!-- Main Tracking Card -->
+        <div class="col-lg-8">
+            <!-- Ticket Overview Header Card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-primary border fw-bold fs-6" style="font-family:monospace;">
+                                #@selected.GrievanceId.ToString()[..8].ToUpper()
+                            </span>
+                            <span class="badge rounded-pill @StatusBadgeClass(selected.Status) fs-6 px-3">
+                                @selected.Status
+                            </span>
+                        </div>
+                        <span class="badge bg-secondary text-white rounded-pill px-3 py-2">
+                            @selected.Priority Priority
+                        </span>
+                    </div>
+
+                    <h3 class="fw-bold text-dark mb-1">@selected.Category</h3>
+                    <p class="text-muted mb-4">
+                        <i class="fa-solid fa-building text-primary me-1"></i>
+                        Routed Department: <strong>@(selected.Department?.DepartmentName ?? "General Administration")</strong>
+                    </p>
+
+                    <!-- Stepper -->
+                    <div class="p-3 bg-light rounded-4 border mb-4">
+                        <div class="tracker-stepper">
+                            <div class="tracker-step @(currentStep >= 1 ? "completed" : "") @(selected.Status == GrievanceStatus.Submitted ? "active" : "")">
+                                <div class="step-num"><i class="fa-solid fa-check"></i></div>
+                                <div class="step-label">Submitted</div>
+                                <div class="step-date">@selected.CreatedAt.ToString("MMM dd")</div>
+                            </div>
+
+                            <div class="tracker-bar @(currentStep >= 2 ? "completed" : "")"></div>
+
+                            <div class="tracker-step @(currentStep >= 2 ? "completed" : "") @(selected.Status == GrievanceStatus.Acknowledged ? "active" : "")">
+                                <div class="step-num"><i class="fa-solid fa-eye"></i></div>
+                                <div class="step-label">Acknowledged</div>
+                                <div class="step-date">In Review</div>
+                            </div>
+
+                            <div class="tracker-bar @(currentStep >= 3 ? "completed" : "")"></div>
+
+                            <div class="tracker-step @(currentStep >= 3 ? "completed" : "") @(selected.Status == GrievanceStatus.InProgress ? "active" : "")">
+                                <div class="step-num"><i class="fa-solid fa-spinner"></i></div>
+                                <div class="step-label">In Progress</div>
+                                <div class="step-date">Resolving</div>
+                            </div>
+
+                            <div class="tracker-bar @(currentStep >= 4 ? "completed" : "")"></div>
+
+                            @if (selected.Status == GrievanceStatus.Escalated)
+                            {
+                                <div class="tracker-step active escalated">
+                                    <div class="step-num bg-danger text-white"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                    <div class="step-label text-danger fw-bold">Escalated</div>
+                                    <div class="step-date text-danger">HOD Active</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="tracker-step @(currentStep >= 4 ? "completed active" : "")">
+                                    <div class="step-num"><i class="fa-solid fa-award"></i></div>
+                                    <div class="step-label">Resolved</div>
+                                    <div class="step-date">@(selected.ResolvedAt.HasValue ? selected.ResolvedAt.Value.ToString("MMM dd") : "Target")</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- SLA Countdown Banner -->
+                    <div class="alert @(isOverdue ? "alert-danger" : (selected.Status == GrievanceStatus.Resolved ? "alert-success" : "alert-primary")) border-0 rounded-4 d-flex align-items-center gap-3 p-3 mb-4">
+                        <div class="fs-2">
+                            @if (selected.Status == GrievanceStatus.Resolved)
+                            {
+                                <i class="fa-solid fa-circle-check text-success"></i>
+                            }
+                            else if (isOverdue)
+                            {
+                                <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                            }
+                            else
+                            {
+                                <i class="fa-solid fa-hourglass-half text-primary"></i>
+                            }
+                        </div>
+                        <div>
+                            @if (selected.Status == GrievanceStatus.Resolved)
+                            {
+                                <div class="fw-bold">Grievance Successfully Resolved</div>
+                                <div class="small">Completed on @(selected.ResolvedAt?.ToString("MMMM dd, yyyy HH:mm") ?? "N/A") UTC.</div>
+                            }
+                            else if (isOverdue)
+                            {
+                                <div class="fw-bold text-danger">SLA Resolution Window Breached</div>
+                                <div class="small">Was targeted for @(selected.SlaDueAt?.ToString("MMMM dd, yyyy") ?? "N/A"). This ticket has been prioritized for escalation.</div>
+                            }
+                            else
+                            {
+                                <div class="fw-bold">SLA Target Resolution Date: @(selected.SlaDueAt?.ToString("MMMM dd, yyyy") ?? "Pending")</div>
+                                <div class="small">Assigned officer is actively working within the mandated SLA window.</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <h6 class="fw-bold text-secondary text-uppercase small tracking-wider mb-2">
+                        <i class="fa-solid fa-quote-left text-primary me-1"></i> Submitted Description
+                    </h6>
+                    <div class="p-3 bg-light rounded-3 text-dark mb-4 border lh-base" style="white-space:pre-wrap;">@selected.Description</div>
+
+                    <div class="d-flex justify-content-end">
+                        <a asp-action="Details" asp-route-id="@selected.GrievanceId" class="btn btn-outline-primary btn-sm rounded-3">
+                            <i class="fa-solid fa-expand me-1"></i> Open Full Details Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Trail Timeline -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold mb-4">
+                        <i class="fa-solid fa-timeline text-primary me-2"></i> Real-Time Audit Log
+                    </h5>
+
+                    @if (selected.Logs == null || !selected.Logs.Any())
+                    {
+                        <p class="text-muted small">No logs recorded yet.</p>
+                    }
+                    else
+                    {
+                        <div class="timeline">
+                            @foreach (var log in selected.Logs.OrderBy(l => l.Timestamp))
+                            {
+                                <div class="d-flex gap-3 mb-4">
+                                    <div class="timeline-dot-wrapper">
+                                        <div class="timeline-dot bg-primary text-white shadow-sm">
+                                            <i class="fa-solid fa-check small"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 p-3 bg-light rounded-4 border">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-dark">@log.StatusChangedTo</span>
+                                            <small class="text-muted">@log.Timestamp.ToString("MMM dd, yyyy HH:mm") UTC</small>
+                                        </div>
+                                        <div class="small text-muted mb-2">Officer: @(log.UpdatedByUser?.Email ?? "Grievance Cell")</div>
+                                        @if (!string.IsNullOrWhiteSpace(log.ResolutionNote))
+                                        {
+                                            <div class="p-2 bg-white rounded-3 border small text-dark">
+                                                <i class="fa-solid fa-note-sticky text-warning me-1"></i> @log.ResolutionNote
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: My Submitted Grievances List -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3 text-dark">
+                        <i class="fa-solid fa-folder-open text-primary me-2"></i> Your Tickets (@Model.MyGrievances.Count)
+                    </h6>
+
+                    @if (!Model.MyGrievances.Any())
+                    {
+                        <p class="small text-muted mb-0">No other tickets found.</p>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-2" style="max-height: 480px; overflow-y: auto;">
+                            @foreach (var g in Model.MyGrievances)
+                            {
+                                bool isCur = selected.GrievanceId == g.GrievanceId;
+                                <a asp-action="Tracker" asp-route-ticketId="@g.GrievanceId.ToString()[..8].ToUpper()"
+                                   class="p-3 rounded-3 text-decoration-none border transition-hover @(isCur ? "border-primary bg-primary bg-opacity-10" : "bg-light text-dark")">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <code class="fw-bold @(isCur ? "text-primary" : "text-dark")">#@g.GrievanceId.ToString()[..8].ToUpper()</code>
+                                        <span class="badge @StatusBadgeClass(g.Status) rounded-pill">@g.Status</span>
+                                    </div>
+                                    <div class="fw-semibold text-truncate small">@g.Category</div>
+                                    <div class="small text-muted d-flex justify-content-between mt-1">
+                                        <span>@g.CreatedAt.ToString("MMM dd")</span>
+                                        <span>@g.Priority Priority</span>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Anonymous Info Card -->
+            <div class="card border-0 rounded-4 bg-light p-4">
+                <h6 class="fw-bold mb-2">
+                    <i class="fa-solid fa-shield-halved text-primary me-2"></i> Anonymous Submissions
+                </h6>
+                <p class="small text-muted mb-0">
+                    If you submitted an anonymous ticket, save your 8-digit Ticket Code. You can track its live progress anytime by entering the code in the search bar above.
+                </p>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .tracker-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .tracker-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        z-index: 2;
+    }
+    .step-num {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #cbd5e1;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+        transition: all 0.3s;
+    }
+    .tracker-step.completed .step-num {
+        background-color: #10b981;
+    }
+    .tracker-step.active .step-num {
+        background-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+    }
+    .tracker-step.escalated.active .step-num {
+        background-color: #ef4444;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+    }
+    .step-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .step-date {
+        font-size: 0.7rem;
+        color: #64748b;
+    }
+    .tracker-bar {
+        flex-grow: 1;
+        height: 4px;
+        background-color: #cbd5e1;
+        margin-top: -24px;
+        z-index: 1;
+    }
+    .tracker-bar.completed {
+        background-color: #10b981;
+    }
+    .timeline-dot {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .transition-hover {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .transition-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+</style>

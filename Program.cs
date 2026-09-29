@@ -19,6 +19,7 @@ builder.Services.AddScoped<IOpportunityRepository, OpportunityRepository>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<ISkillMatchingEngine, SkillMatchingEngine>();
 builder.Services.AddScoped<ISharedOpportunityFeed, SharedOpportunityFeed>();
+builder.Services.AddScoped<IGrievanceRepository, GrievanceRepository>();
 
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options => 
     {
