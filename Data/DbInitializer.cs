@@ -7,7 +7,7 @@ namespace CampusConnect.Data;
 
 public static class DbInitializer
 {
-    public static async Task SeedAsync(IServiceProvider serviceProvider)
+    public static async Task SeedAsync(IServiceProvider serviceProvider, IConfiguration config, IWebHostEnvironment env)
     {
         using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -61,7 +61,7 @@ public static class DbInitializer
         }
 
         // 4. Helper function to create users with profiles
-        const string defaultPassword = "Password123!";
+        var defaultPassword = config["SeedPassword"] ?? "Password123!";
 
         // Admin User
         var adminEmail = "admin@campusconnect.edu";
@@ -116,10 +116,13 @@ public static class DbInitializer
             }
         }
 
-        // Faculty User 1
-        var faculty1Email = "faculty.smith@campusconnect.edu";
-        User? faculty1 = await userManager.FindByEmailAsync(faculty1Email);
-        if (faculty1 == null)
+        // Test Users (Faculty & Students) only in Development
+        if (env.IsDevelopment())
+        {
+            // Faculty User 1
+            var faculty1Email = "faculty.smith@campusconnect.edu";
+            User? faculty1 = await userManager.FindByEmailAsync(faculty1Email);
+            if (faculty1 == null)
         {
             faculty1 = new User
             {
@@ -330,5 +333,6 @@ public static class DbInitializer
             await dbContext.GrievanceLogs.AddAsync(log1);
             await dbContext.SaveChangesAsync();
         }
+        } // End of Development-only seeding
     }
 }

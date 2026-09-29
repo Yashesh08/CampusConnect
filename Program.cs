@@ -48,7 +48,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    await DbInitializer.SeedAsync(services);
+    await DbInitializer.SeedAsync(services, app.Configuration, app.Environment);
 
     var db = services.GetRequiredService<AppDbContext>();
     if (!db.Opportunities.Any())
