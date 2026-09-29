@@ -3,10 +3,11 @@ using CampusConnect.Models;
 using CampusConnect.Models.Enums;
 using CampusConnect.Repositories;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CampusConnect.Controllers;
 
+[Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
 public class OrganizerController : Controller
 {
     private readonly IOpportunityRepository _opportunityRepository;

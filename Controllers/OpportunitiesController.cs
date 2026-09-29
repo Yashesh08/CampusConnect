@@ -5,8 +5,11 @@ using CampusConnect.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace CampusConnect.Controllers;
 
+[Authorize]
 public class OpportunitiesController : Controller
 {
     private readonly IOpportunityRepository _opportunityRepository;
@@ -75,6 +78,7 @@ public class OpportunitiesController : Controller
     }
 
     // GET: /Opportunities/Create (Week 2 - Form)
+    [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
     public async Task<IActionResult> Create()
     {
         ViewBag.Departments = await _departmentRepository.GetAllAsync();
@@ -85,6 +89,7 @@ public class OpportunitiesController : Controller
     // POST: /Opportunities/Create (Week 2 - Submit)
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
     public async Task<IActionResult> Create(CreateOpportunityViewModel model)
     {
         if (!ModelState.IsValid)
@@ -131,6 +136,7 @@ public class OpportunitiesController : Controller
     }
 
     // GET: /Opportunities/PendingApprovals (Week 2 - Admin / HOD Approval Workflow)
+    [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> PendingApprovals()
     {
         var pendingOpps = await _opportunityRepository.GetPendingApprovalsAsync();
@@ -140,6 +146,7 @@ public class OpportunitiesController : Controller
     // POST: /Opportunities/Approve/{id}
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> Approve(Guid id)
     {
         await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Approved);
@@ -150,6 +157,7 @@ public class OpportunitiesController : Controller
     // POST: /Opportunities/Reject/{id}
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> Reject(Guid id)
     {
         await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Rejected);

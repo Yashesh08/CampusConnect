@@ -14,9 +14,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<ISkillRepository, SkillRepository>();
 builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
+builder.Services.AddScoped<IFacultyProfileRepository, FacultyProfileRepository>();
 builder.Services.AddScoped<IOpportunityRepository, OpportunityRepository>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<ISkillMatchingEngine, SkillMatchingEngine>();
+builder.Services.AddScoped<ISharedOpportunityFeed, SharedOpportunityFeed>();
 
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options => 
     {

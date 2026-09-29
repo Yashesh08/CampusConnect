@@ -2,8 +2,11 @@ using CampusConnect.Models;
 using CampusConnect.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace CampusConnect.Controllers;
 
+[Authorize(Roles = "Hod,Admin")]
 public class SkillsController : Controller
 {
     private readonly ISkillRepository _repository;

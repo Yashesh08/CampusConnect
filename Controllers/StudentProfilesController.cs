@@ -5,10 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using CampusConnect.Services;
 
 namespace CampusConnect.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Student")]
 public class StudentProfilesController : Controller
 {
     private readonly IStudentProfileRepository _repository;
@@ -16,19 +17,25 @@ public class StudentProfilesController : Controller
     private readonly ISkillRepository _skillRepo;
     private readonly UserManager<User> _userManager;
     private readonly IWebHostEnvironment _env;
+    private readonly ISkillMatchingEngine _matchingEngine;
+    private readonly ISharedOpportunityFeed _opportunityFeed;
 
     public StudentProfilesController(
         IStudentProfileRepository repository, 
         IDepartmentRepository deptRepo, 
         ISkillRepository skillRepo,
         UserManager<User> userManager,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        ISkillMatchingEngine matchingEngine,
+        ISharedOpportunityFeed opportunityFeed)
     {
         _repository = repository;
         _deptRepo = deptRepo;
         _skillRepo = skillRepo;
         _userManager = userManager;
         _env = env;
+        _matchingEngine = matchingEngine;
+        _opportunityFeed = opportunityFeed;
     }
 
     public async Task<IActionResult> Index()
@@ -42,7 +49,27 @@ public class StudentProfilesController : Controller
             return RedirectToAction(nameof(Create));
         }
 
-        return RedirectToAction(nameof(Edit));
+        return RedirectToAction(nameof(Dashboard));
+    }
+
+    public async Task<IActionResult> Dashboard()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var profile = await _repository.GetByUserIdAsync(user.Id);
+        if (profile == null) return RedirectToAction(nameof(Create));
+
+        var opportunities = await _opportunityFeed.GetUpcomingOpportunitiesAsync();
+        
+        var matches = opportunities.Select(o => new DashboardOpportunityMatch
+        {
+            Opportunity = o,
+            MatchResult = _matchingEngine.CalculateMatch(profile, o)
+        }).OrderByDescending(m => m.MatchResult.MatchPercentage).ToList();
+
+        ViewBag.Matches = matches;
+        return View(profile);
     }
 
     public async Task<IActionResult> Create()

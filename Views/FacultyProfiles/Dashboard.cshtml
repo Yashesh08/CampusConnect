@@ -1,0 +1,64 @@
+@model CampusConnect.Models.FacultyProfile
+@{
+    ViewData["Title"] = "Faculty Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">Faculty Dashboard</h2>
+            <p class="text-muted">Welcome, @Model.Designation!</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card-page h-100">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="fw-bold mb-0">Profile Information</h5>
+                    <a asp-action="Edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent px-0">
+                        <span class="text-muted small d-block">Department</span>
+                        <span class="fw-semibold">@Model.Department.DepartmentName</span>
+                    </li>
+                    <li class="list-group-item bg-transparent px-0">
+                        <span class="text-muted small d-block">Designation</span>
+                        <span class="fw-semibold">@Model.Designation</span>
+                    </li>
+                    <li class="list-group-item bg-transparent px-0">
+                        <span class="text-muted small d-block">Cabin</span>
+                        <span class="fw-semibold">@(string.IsNullOrEmpty(Model.CabinNumber) ? "Not Assigned" : Model.CabinNumber)</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-8">
+            <div class="card-page h-100">
+                <h5 class="fw-bold mb-4">Faculty Actions & Organizer Suite</h5>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="card h-100 border border-primary shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-bold"><i class="fa-solid fa-plus text-primary me-2"></i>Post Opportunity</h6>
+                                <p class="text-muted small">Create and publish new internships, events, or workshops for students.</p>
+                                <a asp-controller="Opportunities" asp-action="Create" class="btn btn-primary btn-sm w-100 mt-2">Create Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card h-100 border border-info shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-bold"><i class="fa-solid fa-chart-line text-info me-2"></i>Manage Applicants</h6>
+                                <p class="text-muted small">Review applications for opportunities you have posted.</p>
+                                <a asp-controller="Organizer" asp-action="Dashboard" class="btn btn-info text-white btn-sm w-100 mt-2">Go to Organizer Hub</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

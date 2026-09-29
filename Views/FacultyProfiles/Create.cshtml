@@ -1,0 +1,43 @@
+@model CampusConnect.Models.ViewModels.FacultyProfileViewModel
+@{
+    ViewData["Title"] = "Create Faculty Profile";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card-page">
+                <h3 class="fw-bold mb-4">Complete Your Faculty Profile</h3>
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="DepartmentId" class="form-label fw-semibold"></label>
+                        <select asp-for="DepartmentId" class="form-select" asp-items="ViewBag.Departments">
+                            <option value="">-- Select Department --</option>
+                        </select>
+                        <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Designation" class="form-label fw-semibold"></label>
+                        <input asp-for="Designation" class="form-control" placeholder="e.g. Associate Professor" />
+                        <span asp-validation-for="Designation" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="CabinNumber" class="form-label fw-semibold"></label>
+                        <input asp-for="CabinNumber" class="form-control" placeholder="e.g. A-101" />
+                        <span asp-validation-for="CabinNumber" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Save Profile</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

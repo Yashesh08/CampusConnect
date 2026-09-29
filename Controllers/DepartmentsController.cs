@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CampusConnect.Controllers;
 
+[Authorize(Roles = "Hod,Admin")]
 public class DepartmentsController : Controller
 {
     private readonly IDepartmentRepository _repository;

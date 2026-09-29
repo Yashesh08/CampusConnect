@@ -39,31 +39,42 @@
                             <i class="fa-solid fa-briefcase me-1"></i> Opportunities
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Applications" asp-action="MyApplications">
-                            <i class="fa-solid fa-paper-plane me-1"></i> My Applications
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-user-gear me-1"></i> Organizer Suite
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 rounded-3">
-                            <li><a class="dropdown-item" asp-controller="Opportunities" asp-action="Create"><i class="fa-solid fa-plus text-primary me-2"></i> Post Opportunity</a></li>
-                            <li><a class="dropdown-item" asp-controller="Organizer" asp-action="Dashboard"><i class="fa-solid fa-chart-line text-info me-2"></i> Organizer Dashboard</a></li>
-                            <li><a class="dropdown-item" asp-controller="Opportunities" asp-action="PendingApprovals"><i class="fa-solid fa-check-double text-success me-2"></i> Admin Approvals</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-layer-group me-1"></i> Academic Modules
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 rounded-3">
-                            <li><a class="dropdown-item" asp-controller="Departments" asp-action="Index"><i class="fa-solid fa-building-columns text-primary me-2"></i> Departments</a></li>
-                            <li><a class="dropdown-item" asp-controller="StudentProfiles" asp-action="Index"><i class="fa-solid fa-id-card text-purple me-2"></i> Student Profiles</a></li>
-                            <li><a class="dropdown-item" asp-controller="Skills" asp-action="Index"><i class="fa-solid fa-lightbulb text-warning me-2"></i> Skills Registry</a></li>
-                        </ul>
-                    </li>
+                    @if (User.IsInRole("Student"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Applications" asp-action="MyApplications">
+                                <i class="fa-solid fa-paper-plane me-1"></i> My Applications
+                            </a>
+                        </li>
+                    }
+                    @if (User.IsInRole("Faculty") || User.IsInRole("ClubCoordinator") || User.IsInRole("EventOrganizer") || User.IsInRole("Hod") || User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-user-gear me-1"></i> Organizer Suite
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-3">
+                                <li><a class="dropdown-item" asp-controller="Opportunities" asp-action="Create"><i class="fa-solid fa-plus text-primary me-2"></i> Post Opportunity</a></li>
+                                <li><a class="dropdown-item" asp-controller="Organizer" asp-action="Dashboard"><i class="fa-solid fa-chart-line text-info me-2"></i> Organizer Dashboard</a></li>
+                                @if (User.IsInRole("Hod") || User.IsInRole("Admin"))
+                                {
+                                    <li><a class="dropdown-item" asp-controller="Opportunities" asp-action="PendingApprovals"><i class="fa-solid fa-check-double text-success me-2"></i> Admin Approvals</a></li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                    @if (User.IsInRole("Hod") || User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-layer-group me-1"></i> Academic Modules
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-3">
+                                <li><a class="dropdown-item" asp-controller="Departments" asp-action="Index"><i class="fa-solid fa-building-columns text-primary me-2"></i> Departments</a></li>
+                                <li><a class="dropdown-item" asp-controller="Skills" asp-action="Index"><i class="fa-solid fa-lightbulb text-warning me-2"></i> Skills Registry</a></li>
+                            </ul>
+                        </li>
+                    }
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     @if (User.Identity?.IsAuthenticated ?? false)
@@ -85,8 +96,8 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item" asp-controller="StudentProfiles" asp-action="Index">
-                                        <i class="fa-solid fa-user me-2 text-primary"></i> My Profile
+                                    <a class="dropdown-item" asp-controller="Home" asp-action="DashboardRouter">
+                                        <i class="fa-solid fa-user me-2 text-primary"></i> My Profile / Dashboard
                                     </a>
                                 </li>
                                 <li>

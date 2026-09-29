@@ -62,4 +62,22 @@ public class HomeController : Controller
 
         return View();
     }
+
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> DashboardRouter()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        return user.Role switch
+        {
+            CampusConnect.Models.Enums.UserRole.Student => RedirectToAction("Index", "StudentProfiles"),
+            CampusConnect.Models.Enums.UserRole.Faculty => RedirectToAction("Index", "FacultyProfiles"),
+            CampusConnect.Models.Enums.UserRole.EventOrganizer => RedirectToAction("Dashboard", "Organizer"),
+            CampusConnect.Models.Enums.UserRole.ClubCoordinator => RedirectToAction("Dashboard", "Organizer"),
+            CampusConnect.Models.Enums.UserRole.Admin => RedirectToAction("PendingApprovals", "Opportunities"),
+            CampusConnect.Models.Enums.UserRole.Hod => RedirectToAction("PendingApprovals", "Opportunities"),
+            _ => RedirectToAction("Index", "Home")
+        };
+    }
 }

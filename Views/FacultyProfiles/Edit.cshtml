@@ -1,0 +1,46 @@
+@model CampusConnect.Models.ViewModels.FacultyProfileViewModel
+@{
+    ViewData["Title"] = "Edit Faculty Profile";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card-page">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold mb-0">Update Profile</h3>
+                    <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                </div>
+                
+                <form asp-action="Edit" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <input type="hidden" asp-for="FacultyProfileId" />
+
+                    <div class="mb-3">
+                        <label asp-for="DepartmentId" class="form-label fw-semibold"></label>
+                        <select asp-for="DepartmentId" class="form-select" asp-items="ViewBag.Departments"></select>
+                        <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Designation" class="form-label fw-semibold"></label>
+                        <input asp-for="Designation" class="form-control" />
+                        <span asp-validation-for="Designation" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="CabinNumber" class="form-label fw-semibold"></label>
+                        <input asp-for="CabinNumber" class="form-control" />
+                        <span asp-validation-for="CabinNumber" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -15,17 +15,27 @@ public class SkillMatchingEngine : ISkillMatchingEngine
             return result;
         }
 
-        var studentSkillIds = student.StudentSkills?.Select(ss => ss.SkillId).ToHashSet() ?? new HashSet<int>();
+        var studentSkillsDict = student.StudentSkills?.ToDictionary(ss => ss.SkillId, ss => ss.ProficiencyLevel) 
+                                ?? new Dictionary<int, CampusConnect.Models.Enums.ProficiencyLevel>();
         var requiredSkillsCount = opportunity.RequiredSkills.Count;
-        int matchingCount = 0;
+        double totalScore = 0;
 
         foreach (var reqSkill in opportunity.RequiredSkills)
         {
             if (reqSkill.Skill == null) continue; // Safety check
 
-            if (studentSkillIds.Contains(reqSkill.SkillId))
+            if (studentSkillsDict.TryGetValue(reqSkill.SkillId, out var proficiency))
             {
-                matchingCount++;
+                // Assign weight based on proficiency level
+                double weight = proficiency switch
+                {
+                    CampusConnect.Models.Enums.ProficiencyLevel.Advanced => 1.0,
+                    CampusConnect.Models.Enums.ProficiencyLevel.Intermediate => 0.8,
+                    CampusConnect.Models.Enums.ProficiencyLevel.Beginner => 0.5,
+                    _ => 0.5
+                };
+                
+                totalScore += weight;
                 result.MatchingSkills.Add(reqSkill.Skill);
             }
             else
@@ -34,7 +44,8 @@ public class SkillMatchingEngine : ISkillMatchingEngine
             }
         }
 
-        result.MatchPercentage = Math.Round((double)matchingCount / requiredSkillsCount * 100.0, 1);
+        // Match Percentage can be up to 100% based on cumulative weights
+        result.MatchPercentage = Math.Round((totalScore / requiredSkillsCount) * 100.0, 1);
         return result;
     }
 }

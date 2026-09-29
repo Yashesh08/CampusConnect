@@ -4,8 +4,11 @@ using CampusConnect.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace CampusConnect.Controllers;
 
+[Authorize(Roles = "Student")]
 public class ApplicationsController : Controller
 {
     private readonly IApplicationRepository _applicationRepository;
