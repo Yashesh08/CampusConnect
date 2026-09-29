@@ -1,10 +1,11 @@
 using CampusConnect.Models;
 using CampusConnect.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CampusConnect.Controllers;
 
-[Authorize(Roles = "Hod,Admin")]
+[Authorize]
 public class DepartmentsController : Controller
 {
     private readonly IDepartmentRepository _repository;
@@ -12,9 +13,11 @@ public class DepartmentsController : Controller
 
     public async Task<IActionResult> Index() => View(await _repository.GetAllAsync());
 
+    [Authorize(Roles = "Admin")]
     public IActionResult Create() => View();
 
     [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([Bind("DepartmentName,DepartmentCode")] Department department)
     {
         if (!ModelState.IsValid) return View(department);
@@ -22,6 +25,8 @@ public class DepartmentsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Edit(int id)
     {
         var dept = await _repository.GetByIdAsync(id);
@@ -29,6 +34,7 @@ public class DepartmentsController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Edit(int id, [Bind("DepartmentId,DepartmentName,DepartmentCode")] Department department)
     {
         if (id != department.DepartmentId) return NotFound();
@@ -37,6 +43,7 @@ public class DepartmentsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var dept = await _repository.GetByIdAsync(id);
@@ -44,6 +51,7 @@ public class DepartmentsController : Controller
     }
 
     [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         await _repository.DeleteAsync(id);

@@ -123,7 +123,7 @@ public class FacultyProfilesController : Controller
         }
 
         var profile = await _repository.GetByUserIdAsync(user.Id);
-        if (profile == null || profile.FacultyProfileId != model.FacultyProfileId) return NotFound();
+        if (profile == null || profile.FacultyProfileId != model.FacultyProfileId) return Forbid();
 
         profile.DepartmentId = model.DepartmentId;
         profile.Designation = model.Designation;

@@ -119,7 +119,15 @@ public class ApplicationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Withdraw(Guid id)
     {
+        
+        var user = await _userManager.GetUserAsync(User);
+        var studentProfile = user != null ? await _studentProfileRepository.GetByUserIdAsync(user.Id) : null;
+        if (studentProfile == null) return Forbid();
+        var application = await _applicationRepository.GetByIdAsync(id);
+        if (application == null) return NotFound();
+        if (application.StudentId != studentProfile.ProfileId) return Forbid();
         await _applicationRepository.DeleteAsync(id);
+
         TempData["SuccessMessage"] = "Application withdrawn successfully.";
         return RedirectToAction(nameof(MyApplications));
     }

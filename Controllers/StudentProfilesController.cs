@@ -109,7 +109,7 @@ public class StudentProfilesController : Controller
             UserId = user.Id,
             RollNumber = model.RollNumber,
             DepartmentId = model.DepartmentId,
-            BatchYear = model.BatchYear,
+            BatchYear = model.BatchYear ?? 0,
             Bio = model.Bio,
             GitHubUrl = model.GitHubUrl,
             LinkedInUrl = model.LinkedInUrl,
@@ -166,7 +166,7 @@ public class StudentProfilesController : Controller
 
         profile.RollNumber = model.RollNumber;
         profile.DepartmentId = model.DepartmentId;
-        profile.BatchYear = model.BatchYear;
+        profile.BatchYear = model.BatchYear ?? 0;
         profile.Bio = model.Bio;
         profile.GitHubUrl = model.GitHubUrl;
         profile.LinkedInUrl = model.LinkedInUrl;
@@ -186,6 +186,10 @@ public class StudentProfilesController : Controller
     {
         if (file.Length > 0)
         {
+            if (file.Length > 5 * 1024 * 1024) throw new InvalidOperationException("File size cannot exceed 5MB.");
+            var ext = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (ext != ".pdf" && ext != ".docx") throw new InvalidOperationException("Only PDF and DOCX files are allowed.");
+
             string uploadsFolder = Path.Combine(_env.WebRootPath, "resumes");
             Directory.CreateDirectory(uploadsFolder);
             string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;

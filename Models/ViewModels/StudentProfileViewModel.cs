@@ -14,14 +14,17 @@ public class StudentProfileViewModel
     public int DepartmentId { get; set; }
     
     [Required, Display(Name = "Batch Year")]
-    public int BatchYear { get; set; }
+    [Range(2020, 2030)]
+    public int? BatchYear { get; set; }
     
     public string? Bio { get; set; }
     
     [MaxLength(500), Display(Name = "GitHub URL"), Url]
+    [RegularExpression(@"^https:\/\/(www\.)?github\.com\/.*")]
     public string? GitHubUrl { get; set; }
     
     [MaxLength(500), Display(Name = "LinkedIn URL"), Url]
+    [RegularExpression(@"^https:\/\/(www\.)?linkedin\.com\/.*")]
     public string? LinkedInUrl { get; set; }
     
     public string? ExistingResumeUrl { get; set; }

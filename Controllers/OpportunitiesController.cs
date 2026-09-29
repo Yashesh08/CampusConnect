@@ -149,7 +149,16 @@ public class OpportunitiesController : Controller
     [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> Approve(Guid id)
     {
+        
+        var opp = await _opportunityRepository.GetByIdAsync(id);
+        if (User.IsInRole("Hod") && !User.IsInRole("Admin")) {
+            var user = await _userManager.GetUserAsync(User);
+            var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
+            var facProfile = facRepo != null ? await facRepo.GetByUserIdAsync(user.Id) : null;
+            if (facProfile == null || (opp?.TargetDepartmentId != null && opp.TargetDepartmentId != facProfile.DepartmentId)) return Forbid();
+        }
         await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Approved);
+
         TempData["SuccessMessage"] = "Opportunity approved and published successfully!";
         return RedirectToAction(nameof(PendingApprovals));
     }
@@ -160,7 +169,16 @@ public class OpportunitiesController : Controller
     [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> Reject(Guid id)
     {
+        
+        var opp = await _opportunityRepository.GetByIdAsync(id);
+        if (User.IsInRole("Hod") && !User.IsInRole("Admin")) {
+            var user = await _userManager.GetUserAsync(User);
+            var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
+            var facProfile = facRepo != null ? await facRepo.GetByUserIdAsync(user.Id) : null;
+            if (facProfile == null || (opp?.TargetDepartmentId != null && opp.TargetDepartmentId != facProfile.DepartmentId)) return Forbid();
+        }
         await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Rejected);
+
         TempData["SuccessMessage"] = "Opportunity has been rejected.";
         return RedirectToAction(nameof(PendingApprovals));
     }

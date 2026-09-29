@@ -4,6 +4,7 @@ using CampusConnect.Models.Enums;
 using CampusConnect.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CampusConnect.Controllers;
 
@@ -53,7 +54,11 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
+        
+        var user = await _userManager.GetUserAsync(User);
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
         var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
+
         ViewBag.Opportunity = opportunity;
         return View(applications);
     }
@@ -69,7 +74,12 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
+        
+        var opportunity = await _opportunityRepository.GetByIdAsync(application.OpportunityId);
+        var user = await _userManager.GetUserAsync(User);
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
         await _applicationRepository.UpdateStatusAsync(applicationId, status, remarks);
+
         TempData["SuccessMessage"] = "Applicant status updated successfully!";
         return RedirectToAction(nameof(Applicants), new { id = application.OpportunityId });
     }
@@ -83,7 +93,11 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
+        
+        var user = await _userManager.GetUserAsync(User);
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
         var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
+
 
         var builder = new StringBuilder();
         builder.AppendLine("ApplicationId,StudentEmail,BatchYear,Status,AppliedAt,OrganizerRemarks");

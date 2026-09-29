@@ -66,8 +66,8 @@ This module is built entirely independently. It relies on its own database entit
 
 ### Week 6: Integration, Testing, Security & Deployment
 **Goal:** Connect with the rest of the application using read-only interfaces.
-- [ ] Wire real opportunity data (from Person 2) into the matching engine, replacing seeded fixtures.
-- [ ] Provide data to the shared unified calendar/dashboard/notification bell as needed.
-- [ ] Test authorization on owned pages.
-- [ ] Optimize queries (pagination, async, avoid N+1) aiming for a 2-second response target.
-- [ ] Deploy and run migrations together.
+- [x] Wire real opportunity data (from Person 2) into the matching engine, replacing seeded fixtures.
+- [x] Provide data to the shared unified calendar/dashboard/notification bell as needed.
+- [x] Test authorization on owned pages.
+- [x] Optimize queries (pagination, async, avoid N+1) aiming for a 2-second response target.
+- [x] Deploy and run migrations together.
