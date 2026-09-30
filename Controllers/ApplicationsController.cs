@@ -89,7 +89,7 @@ public class ApplicationsController : Controller
     }
 
     // GET: /Applications/MyApplications
-    public async Task<IActionResult> MyApplications()
+    public async Task<IActionResult> MyApplications(ApplicationStatus? status)
     {
         var user = await _userManager.GetUserAsync(User);
         StudentProfile? studentProfile = null;
@@ -107,10 +107,17 @@ public class ApplicationsController : Controller
 
         if (studentProfile == null)
         {
+            ViewBag.CurrentStatusFilter = status;
             return View(new List<Application>());
         }
 
         var applications = await _applicationRepository.GetByStudentIdAsync(studentProfile.ProfileId);
+        if (status.HasValue)
+        {
+            applications = applications.Where(a => a.Status == status.Value).ToList();
+        }
+
+        ViewBag.CurrentStatusFilter = status;
         return View(applications);
     }
 

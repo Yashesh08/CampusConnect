@@ -84,6 +84,72 @@ public class OrganizerController : Controller
         return RedirectToAction(nameof(Applicants), new { id = application.OpportunityId });
     }
 
+    // POST: /Organizer/BulkUpdateStatus
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkUpdateStatus(Guid opportunityId, List<Guid> applicationIds, ApplicationStatus status, string? remarks)
+    {
+        if (applicationIds == null || !applicationIds.Any())
+        {
+            TempData["ErrorMessage"] = "No applicants selected for bulk update.";
+            return RedirectToAction(nameof(Applicants), new { id = opportunityId });
+        }
+
+        var opportunity = await _opportunityRepository.GetByIdAsync(opportunityId);
+        var user = await _userManager.GetUserAsync(User);
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+
+        foreach (var appId in applicationIds)
+        {
+            await _applicationRepository.UpdateStatusAsync(appId, status, remarks);
+        }
+
+        TempData["SuccessMessage"] = $"Bulk updated {applicationIds.Count} applicant(s) to status '{status}'.";
+        return RedirectToAction(nameof(Applicants), new { id = opportunityId });
+    }
+
+    // GET: /Organizer/Stats
+    public async Task<IActionResult> Stats()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        Guid organizerId = user?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
+        var allApplications = new List<Application>();
+
+        foreach (var opp in opportunities)
+        {
+            var apps = await _applicationRepository.GetByOpportunityIdAsync(opp.OpportunityId);
+            allApplications.AddRange(apps);
+        }
+
+        var totalApps = allApplications.Count;
+        var selectedApps = allApplications.Count(a => a.Status == ApplicationStatus.Selected);
+        var shortlistedApps = allApplications.Count(a => a.Status == ApplicationStatus.Shortlisted);
+        var rejectedApps = allApplications.Count(a => a.Status == ApplicationStatus.Rejected);
+
+        var viewModel = new OrganizerStatsViewModel
+        {
+            TotalOpportunities = opportunities.Count,
+            ActiveOpportunities = opportunities.Count(o => o.ApprovalStatus == ApprovalStatus.Approved),
+            PendingOpportunities = opportunities.Count(o => o.ApprovalStatus == ApprovalStatus.PendingReview),
+            TotalApplications = totalApps,
+            ShortlistedApplications = shortlistedApps,
+            SelectedApplications = selectedApps,
+            RejectedApplications = rejectedApps,
+            AcceptanceRate = totalApps > 0 ? Math.Round((double)selectedApps / totalApps * 100, 1) : 0,
+            ClosingSoon = opportunities
+                .Where(o => o.RegistrationDeadline >= DateTime.UtcNow && o.RegistrationDeadline <= DateTime.UtcNow.AddDays(7))
+                .OrderBy(o => o.RegistrationDeadline)
+                .ToList(),
+            CategoryBreakdown = opportunities
+                .GroupBy(o => o.Category)
+                .ToDictionary(g => g.Key, g => g.Count())
+        };
+
+        return View(viewModel);
+    }
+
     // GET: /Organizer/ExportCsv/{opportunityId}
     public async Task<IActionResult> ExportCsv(Guid id)
     {
@@ -118,4 +184,18 @@ public class OrganizerController : Controller
 
         return File(fileBytes, "text/csv", fileName);
     }
+}
+
+public class OrganizerStatsViewModel
+{
+    public int TotalOpportunities { get; set; }
+    public int ActiveOpportunities { get; set; }
+    public int PendingOpportunities { get; set; }
+    public int TotalApplications { get; set; }
+    public int ShortlistedApplications { get; set; }
+    public int SelectedApplications { get; set; }
+    public int RejectedApplications { get; set; }
+    public double AcceptanceRate { get; set; }
+    public List<Opportunity> ClosingSoon { get; set; } = new();
+    public Dictionary<OpportunityCategory, int> CategoryBreakdown { get; set; } = new();
 }

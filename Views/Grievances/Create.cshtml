@@ -1,0 +1,215 @@
+@model CampusConnect.Models.ViewModels.CreateGrievanceViewModel
+@using CampusConnect.Models.Enums
+
+@{
+    ViewData["Title"] = "Submit a Grievance";
+    var departments = ViewBag.Departments as IEnumerable<CampusConnect.Models.Department> ?? new List<CampusConnect.Models.Department>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Header card -->
+        <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+            <div class="card-body p-0">
+                <div class="p-4" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                             style="width:52px;height:52px;background:rgba(255,255,255,0.15);">
+                            <i class="fa-solid fa-flag-checkered text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold text-white mb-1">Submit a Grievance</h2>
+                            <p class="mb-0 text-white opacity-75 small">
+                                Your complaint will be routed to the relevant department with an SLA deadline assigned automatically based on priority.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLA reference banner -->
+        <div class="card border-0 rounded-4 shadow-sm mb-4" style="background: linear-gradient(135deg, #fffbeb, #fef3c7);">
+            <div class="card-body py-3 px-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="fa-solid fa-clock text-warning"></i>
+                    <span class="fw-semibold text-dark">SLA Resolution Targets (Business Days)</span>
+                </div>
+                <div class="row row-cols-2 row-cols-md-4 g-2">
+                    <div class="col">
+                        <div class="text-center rounded-3 p-2" style="background:#fee2e2;">
+                            <div class="fw-bold text-danger">Critical</div>
+                            <div class="small text-muted">1 business day</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="text-center rounded-3 p-2" style="background:#ffedd5;">
+                            <div class="fw-bold text-orange" style="color:#ea580c;">High</div>
+                            <div class="small text-muted">3 business days</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="text-center rounded-3 p-2" style="background:#fef9c3;">
+                            <div class="fw-bold text-warning">Medium</div>
+                            <div class="small text-muted">5 business days</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="text-center rounded-3 p-2" style="background:#f0fdf4;">
+                            <div class="fw-bold text-success">Low</div>
+                            <div class="small text-muted">10 business days</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main form card -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <form asp-action="Create" method="post" id="grievanceForm">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 mb-3"></div>
+
+                    <!-- Category + Department -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Category" class="form-label fw-semibold">
+                                <i class="fa-solid fa-tag me-1 text-primary"></i> Category *
+                            </label>
+                            <select asp-for="Category" class="form-select rounded-3" id="grievanceCategorySelect">
+                                <option value="">— Select category —</option>
+                                @foreach (var cat in Enum.GetValues<GrievanceCategory>())
+                                {
+                                    <option value="@cat">@cat</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="DepartmentId" class="form-label fw-semibold">
+                                <i class="fa-solid fa-building-columns me-1 text-primary"></i> Route to Department *
+                            </label>
+                            <select asp-for="DepartmentId" class="form-select rounded-3" id="deptSelect">
+                                <option value="">— Select department —</option>
+                                @foreach (var dept in departments)
+                                {
+                                    <option value="@dept.DepartmentId">@dept.DepartmentName (@dept.DepartmentCode)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Priority -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-gauge-high me-1 text-primary"></i> Priority *
+                        </label>
+                        <div class="row g-2" id="priorityCards">
+                            @{
+                                var priorities = new[] {
+                                    ("Critical", "danger",  "fa-circle-exclamation", "Immediate safety or harassment — 1 business day"),
+                                    ("High",     "orange-priority", "fa-arrow-up",            "Urgent academic/infrastructure issue — 3 days"),
+                                    ("Medium",   "warning", "fa-minus",               "Standard complaint — 5 business days"),
+                                    ("Low",      "success", "fa-arrow-down",           "General feedback / suggestion — 10 days")
+                                };
+                                foreach (var (label, color, icon, desc) in priorities)
+                                {
+                                    <div class="col-6 col-md-3">
+                                        <input type="radio" class="btn-check" name="Priority" id="priority_@label"
+                                               value="@label" @(label == "Medium" ? "checked" : "")>
+                                        <label class="btn btn-outline-secondary w-100 rounded-3 priority-card text-start p-3"
+                                               for="priority_@label">
+                                            <div class="fw-bold mb-1">
+                                                <i class="fa-solid @icon me-1"></i> @label
+                                            </div>
+                                            <div class="small text-muted" style="line-height:1.3;">@desc</div>
+                                        </label>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <span asp-validation-for="Priority" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label fw-semibold">
+                            <i class="fa-solid fa-pen-to-square me-1 text-primary"></i> Detailed Description *
+                        </label>
+                        <textarea asp-for="Description" class="form-control rounded-3" rows="6" id="descArea"
+                                  placeholder="Please describe your grievance clearly — include dates, locations, and any supporting details (min 30 characters)..."></textarea>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                            <small class="text-muted" id="charCount">0 / 2000</small>
+                        </div>
+                    </div>
+
+                    <!-- Anonymous toggle -->
+                    <div class="mb-5">
+                        <div class="card border-0 rounded-3 p-3" style="background:#f8faff;">
+                            <div class="form-check form-switch d-flex align-items-start gap-3">
+                                <input class="form-check-input mt-1" type="checkbox" role="switch"
+                                       asp-for="IsAnonymous" id="anonymousToggle" style="width:2.5rem;height:1.4rem;">
+                                <label class="form-check-label" for="anonymousToggle">
+                                    <span class="fw-semibold text-dark d-block">
+                                        <i class="fa-solid fa-user-secret me-2 text-secondary"></i>Submit Anonymously
+                                    </span>
+                                    <span class="text-muted small">
+                                        Your identity will <strong>not</strong> be recorded with the grievance.
+                                        You will not be able to track this ticket once submitted.
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-3">
+                            <i class="fa-solid fa-xmark me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5 rounded-3 shadow-sm" id="submitGrievanceBtn">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Submit Grievance
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Character counter
+        const desc = document.getElementById('descArea');
+        const counter = document.getElementById('charCount');
+        function updateCounter() {
+            const len = desc.value.length;
+            counter.textContent = len + ' / 2000';
+            counter.classList.toggle('text-danger', len > 1900);
+        }
+        desc.addEventListener('input', updateCounter);
+        updateCounter();
+
+        // Priority card highlight on select
+        document.querySelectorAll('#priorityCards input[type=radio]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.querySelectorAll('#priorityCards label').forEach(l => l.classList.remove('active', 'border-primary'));
+                if (radio.checked) radio.nextElementSibling.classList.add('active', 'border-primary');
+            });
+        });
+        // Highlight default
+        const defaultChecked = document.querySelector('#priorityCards input[checked]');
+        if (defaultChecked) defaultChecked.nextElementSibling.classList.add('active', 'border-primary');
+
+        // Disable submit on double-click
+        document.getElementById('grievanceForm').addEventListener('submit', function() {
+            document.getElementById('submitGrievanceBtn').disabled = true;
+            document.getElementById('submitGrievanceBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting…';
+        });
+    </script>
+}

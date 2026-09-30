@@ -1,0 +1,196 @@
+@model CampusConnect.Controllers.OrganizerStatsViewModel
+
+@{
+    ViewData["Title"] = "Opportunity Analytics & Stats";
+}
+
+<div class="mb-3">
+    <a asp-action="Dashboard" class="btn btn-sm btn-outline-secondary">&larr; Back to Organizer Dashboard</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">📊 Opportunity Analytics & Metrics</h2>
+        <p class="text-muted mb-0">Overview of your posted opportunities, applicant engagement, and conversion rates.</p>
+    </div>
+</div>
+
+<!-- Metrics Overview Cards -->
+<div class="row row-cols-1 row-cols-md-4 g-3 mb-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm p-3 bg-primary text-white h-100">
+            <small class="text-white-50 text-uppercase fw-bold">Total Opportunities</small>
+            <h2 class="fw-bold mb-1 mt-2">@Model.TotalOpportunities</h2>
+            <div class="small text-white-50">@Model.ActiveOpportunities Active &bull; @Model.PendingOpportunities Pending</div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card border-0 shadow-sm p-3 bg-info text-white h-100">
+            <small class="text-white-50 text-uppercase fw-bold">Total Applicants</small>
+            <h2 class="fw-bold mb-1 mt-2">@Model.TotalApplications</h2>
+            <div class="small text-white-50">Submissions received</div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card border-0 shadow-sm p-3 bg-success text-white h-100">
+            <small class="text-white-50 text-uppercase fw-bold">Selected Applicants</small>
+            <h2 class="fw-bold mb-1 mt-2">@Model.SelectedApplications</h2>
+            <div class="small text-white-50">@Model.ShortlistedApplications Shortlisted</div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card border-0 shadow-sm p-3 bg-dark text-white h-100">
+            <small class="text-white-50 text-uppercase fw-bold">Selection Rate</small>
+            <h2 class="fw-bold mb-1 mt-2">@Model.AcceptanceRate%</h2>
+            <div class="small text-white-50">Based on total submissions</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Status Breakdown -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0">Applicant Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.TotalApplications == 0)
+                {
+                    <p class="text-muted text-center py-4">No applications received yet to generate status metrics.</p>
+                }
+                else
+                {
+                    var appliedPct = Model.TotalApplications > 0 ? (Model.TotalApplications - Model.ShortlistedApplications - Model.SelectedApplications - Model.RejectedApplications) * 100 / Model.TotalApplications : 0;
+                    var shortlistedPct = Model.TotalApplications > 0 ? Model.ShortlistedApplications * 100 / Model.TotalApplications : 0;
+                    var selectedPct = Model.TotalApplications > 0 ? Model.SelectedApplications * 100 / Model.TotalApplications : 0;
+                    var rejectedPct = Model.TotalApplications > 0 ? Model.RejectedApplications * 100 / Model.TotalApplications : 0;
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold">Selected</span>
+                            <span class="text-muted small">@Model.SelectedApplications (@selectedPct%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" style="width: @selectedPct%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold">Shortlisted</span>
+                            <span class="text-muted small">@Model.ShortlistedApplications (@shortlistedPct%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" style="width: @shortlistedPct%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold">Applied / Under Review</span>
+                            <span class="text-muted small">@(Model.TotalApplications - Model.ShortlistedApplications - Model.SelectedApplications - Model.RejectedApplications) (@appliedPct%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-info" style="width: @appliedPct%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold">Rejected</span>
+                            <span class="text-muted small">@Model.RejectedApplications (@rejectedPct%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-danger" style="width: @rejectedPct%"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Distribution -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0">Opportunities by Category</h5>
+            </div>
+            <div class="card-body">
+                @if (!Model.CategoryBreakdown.Any())
+                {
+                    <p class="text-muted text-center py-4">No posted opportunities available.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var cat in Model.CategoryBreakdown)
+                        {
+                            var pct = Model.TotalOpportunities > 0 ? cat.Value * 100 / Model.TotalOpportunities : 0;
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-primary-subtle text-primary border me-2">@cat.Key</span>
+                                    <span class="fw-bold text-dark">@cat.Value position(s)</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: @pct%"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Closing Soon Section -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h5 class="fw-bold mb-0 text-danger">⚠️ Opportunities Closing Within 7 Days</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.ClosingSoon.Any())
+        {
+            <div class="p-4 text-center text-muted">
+                No opportunities closing in the next 7 days.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Registration Deadline</th>
+                            <th>Applicants</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var opp in Model.ClosingSoon)
+                        {
+                            var daysLeft = (opp.RegistrationDeadline - DateTime.UtcNow).Days;
+                            <tr>
+                                <td><strong>@opp.Title</strong></td>
+                                <td><span class="badge bg-light text-dark border">@opp.Category</span></td>
+                                <td class="text-danger fw-bold">
+                                    @opp.RegistrationDeadline.ToString("MMM dd, yyyy") (@daysLeft day(s) left)
+                                </td>
+                                <td><span class="badge bg-secondary">@(opp.Applications?.Count ?? 0)</span></td>
+                                <td class="text-end">
+                                    <a asp-action="Applicants" asp-route-id="@opp.OpportunityId" class="btn btn-sm btn-outline-primary">Review Applicants</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

@@ -2,6 +2,7 @@ using CampusConnect.Models;
 using CampusConnect.Models.Enums;
 using CampusConnect.Models.ViewModels;
 using CampusConnect.Repositories;
+using CampusConnect.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,7 @@ public class OpportunitiesController : Controller
     private readonly IApplicationRepository _applicationRepository;
     private readonly IDepartmentRepository _departmentRepository;
     private readonly ISkillRepository _skillRepository;
+    private readonly IOpportunityCalendarFeed _calendarFeed;
     private readonly UserManager<User> _userManager;
 
     public OpportunitiesController(
@@ -23,12 +25,14 @@ public class OpportunitiesController : Controller
         IApplicationRepository applicationRepository,
         IDepartmentRepository departmentRepository,
         ISkillRepository skillRepository,
+        IOpportunityCalendarFeed calendarFeed,
         UserManager<User> userManager)
     {
         _opportunityRepository = opportunityRepository;
         _applicationRepository = applicationRepository;
         _departmentRepository = departmentRepository;
         _skillRepository = skillRepository;
+        _calendarFeed = calendarFeed;
         _userManager = userManager;
     }
 
@@ -181,5 +185,20 @@ public class OpportunitiesController : Controller
 
         TempData["SuccessMessage"] = "Opportunity has been rejected.";
         return RedirectToAction(nameof(PendingApprovals));
+    }
+
+    // GET: /Opportunities/Calendar (Visual Calendar View)
+    public async Task<IActionResult> Calendar()
+    {
+        var events = await _calendarFeed.GetCalendarEventsAsync();
+        return View(events);
+    }
+
+    // GET: /Opportunities/CalendarFeed (JSON feed for Week 6 integration)
+    [HttpGet]
+    public async Task<IActionResult> CalendarFeed(DateTime? start, DateTime? end)
+    {
+        var events = await _calendarFeed.GetCalendarEventsAsync(start, end);
+        return Json(events);
     }
 }
