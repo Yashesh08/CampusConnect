@@ -127,7 +127,13 @@ public class OpportunitiesController : Controller
         await _opportunityRepository.AddAsync(opportunity, model.SelectedSkillIds);
 
         TempData["SuccessMessage"] = "Opportunity created successfully! It is currently pending Admin/HOD approval.";
-        return RedirectToAction(nameof(PendingApprovals));
+
+        // Redirect based on role: Hod/Admin can view approvals, others go to their dashboard
+        if (User.IsInRole("Hod") || User.IsInRole("Admin"))
+        {
+            return RedirectToAction(nameof(PendingApprovals));
+        }
+        return RedirectToAction("Dashboard", "Organizer");
     }
 
     // GET: /Opportunities/PendingApprovals (Week 2 - Admin / HOD Approval Workflow)

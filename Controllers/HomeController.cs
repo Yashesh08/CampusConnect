@@ -72,11 +72,11 @@ public class HomeController : Controller
         return user.Role switch
         {
             CampusConnect.Models.Enums.UserRole.Student => RedirectToAction("Index", "StudentProfiles"),
-            CampusConnect.Models.Enums.UserRole.Faculty => RedirectToAction("Index", "FacultyProfiles"),
+            CampusConnect.Models.Enums.UserRole.Faculty => RedirectToAction("Dashboard", "Organizer"),
             CampusConnect.Models.Enums.UserRole.EventOrganizer => RedirectToAction("Dashboard", "Organizer"),
             CampusConnect.Models.Enums.UserRole.ClubCoordinator => RedirectToAction("Dashboard", "Organizer"),
-            CampusConnect.Models.Enums.UserRole.Admin => RedirectToAction("PendingApprovals", "Opportunities"),
-            CampusConnect.Models.Enums.UserRole.Hod => RedirectToAction("PendingApprovals", "Opportunities"),
+            CampusConnect.Models.Enums.UserRole.Admin => RedirectToAction("Dashboard", "Organizer"),
+            CampusConnect.Models.Enums.UserRole.Hod => RedirectToAction("Dashboard", "Organizer"),
             _ => RedirectToAction("Index", "Home")
         };
     }

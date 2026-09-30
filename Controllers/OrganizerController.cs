@@ -31,8 +31,17 @@ public class OrganizerController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
-        // SECURITY FIX (V005): Use authenticated user's ID directly, no fallback
-        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(user.Id);
+        List<Opportunity> opportunities;
+        if (User.IsInRole("Admin"))
+        {
+            opportunities = await _opportunityRepository.GetAllAsync(status: null);
+        }
+        else
+        {
+            // SECURITY FIX (V005): Use authenticated user's ID directly, no fallback
+            opportunities = await _opportunityRepository.GetByOrganizerIdAsync(user.Id);
+        }
+
         return View(opportunities);
     }
 
@@ -45,9 +54,8 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
-        
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
         var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
 
         ViewBag.Opportunity = opportunity;
@@ -65,10 +73,9 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
-        
         var opportunity = await _opportunityRepository.GetByIdAsync(application.OpportunityId);
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
         await _applicationRepository.UpdateStatusAsync(applicationId, status, remarks);
 
         TempData["SuccessMessage"] = "Applicant status updated successfully!";
@@ -88,7 +95,7 @@ public class OrganizerController : Controller
 
         var opportunity = await _opportunityRepository.GetByIdAsync(opportunityId);
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
 
         foreach (var appId in applicationIds)
         {
@@ -104,9 +111,18 @@ public class OrganizerController : Controller
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
-        Guid organizerId = user.Id;
 
-        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
+        List<Opportunity> opportunities;
+        if (User.IsInRole("Admin"))
+        {
+            opportunities = await _opportunityRepository.GetAllAsync(status: null);
+        }
+        else
+        {
+            // SECURITY FIX (V004): Use authenticated user's ID directly, no fallback
+            opportunities = await _opportunityRepository.GetByOrganizerIdAsync(user.Id);
+        }
+
         var allApplications = new List<Application>();
 
         foreach (var opp in opportunities)
@@ -151,9 +167,8 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
-        
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
         var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
 
 
