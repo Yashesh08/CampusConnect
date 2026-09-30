@@ -28,20 +28,19 @@ public class OrganizerController : Controller
     // GET: /Organizer/Dashboard
     public async Task<IActionResult> Dashboard()
     {
-        var user = await _userManager.GetUserAsync(User);
-        Guid organizerId;
+        List<Opportunity> opportunities;
 
-        if (user != null)
+        if (User.IsInRole("Admin"))
         {
-            organizerId = user.Id;
+            opportunities = await _opportunityRepository.GetAllAsync(status: null);
         }
         else
         {
-            var defaultOrganizer = await _userManager.FindByEmailAsync("organizer@campusconnect.edu");
-            organizerId = defaultOrganizer?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var user = await _userManager.GetUserAsync(User);
+            Guid organizerId = user?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+            opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
         }
 
-        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
         return View(opportunities);
     }
 
@@ -111,10 +110,19 @@ public class OrganizerController : Controller
     // GET: /Organizer/Stats
     public async Task<IActionResult> Stats()
     {
-        var user = await _userManager.GetUserAsync(User);
-        Guid organizerId = user?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+        List<Opportunity> opportunities;
 
-        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
+        if (User.IsInRole("Admin"))
+        {
+            opportunities = await _opportunityRepository.GetAllAsync(status: null);
+        }
+        else
+        {
+            var user = await _userManager.GetUserAsync(User);
+            Guid organizerId = user?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+            opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
+        }
+
         var allApplications = new List<Application>();
 
         foreach (var opp in opportunities)

@@ -124,6 +124,42 @@ using (var scope = app.Services.CreateScope())
             }
             db.SaveChanges();
         }
+
+        if (!db.Applications.Any())
+        {
+            var targetOpp = db.Opportunities.FirstOrDefault(o => o.ApprovalStatus == CampusConnect.Models.Enums.ApprovalStatus.Approved) ?? db.Opportunities.FirstOrDefault();
+            var studentAlice = db.StudentProfiles.FirstOrDefault(s => s.RollNumber == "CS202401");
+            var studentBob = db.StudentProfiles.FirstOrDefault(s => s.RollNumber == "CS202402");
+
+            if (targetOpp != null)
+            {
+                if (studentAlice != null)
+                {
+                    db.Applications.Add(new Application
+                    {
+                        ApplicationId = Guid.NewGuid(),
+                        OpportunityId = targetOpp.OpportunityId,
+                        StudentId = studentAlice.ProfileId,
+                        Status = CampusConnect.Models.Enums.ApplicationStatus.Applied,
+                        AppliedAt = DateTime.UtcNow.AddDays(-2)
+                    });
+                }
+
+                if (studentBob != null)
+                {
+                    db.Applications.Add(new Application
+                    {
+                        ApplicationId = Guid.NewGuid(),
+                        OpportunityId = targetOpp.OpportunityId,
+                        StudentId = studentBob.ProfileId,
+                        Status = CampusConnect.Models.Enums.ApplicationStatus.UnderReview,
+                        AppliedAt = DateTime.UtcNow.AddDays(-1)
+                    });
+                }
+
+                db.SaveChanges();
+            }
+        }
     }
 }
 
