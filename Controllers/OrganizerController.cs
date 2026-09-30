@@ -53,9 +53,8 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
-        
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
         var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
 
         ViewBag.Opportunity = opportunity;
@@ -73,10 +72,9 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
-        
         var opportunity = await _opportunityRepository.GetByIdAsync(application.OpportunityId);
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
         await _applicationRepository.UpdateStatusAsync(applicationId, status, remarks);
 
         TempData["SuccessMessage"] = "Applicant status updated successfully!";
@@ -96,7 +94,7 @@ public class OrganizerController : Controller
 
         var opportunity = await _opportunityRepository.GetByIdAsync(opportunityId);
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
 
         foreach (var appId in applicationIds)
         {
@@ -167,9 +165,8 @@ public class OrganizerController : Controller
             return NotFound();
         }
 
-        
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin")) return Forbid();
+        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
         var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
 
 
