@@ -29,19 +29,10 @@ public class OrganizerController : Controller
     public async Task<IActionResult> Dashboard()
     {
         var user = await _userManager.GetUserAsync(User);
-        Guid organizerId;
+        if (user == null) return Challenge();
 
-        if (user != null)
-        {
-            organizerId = user.Id;
-        }
-        else
-        {
-            var defaultOrganizer = await _userManager.FindByEmailAsync("organizer@campusconnect.edu");
-            organizerId = defaultOrganizer?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
-        }
-
-        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
+        // SECURITY FIX (V005): Use authenticated user's ID directly, no fallback
+        var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(user.Id);
         return View(opportunities);
     }
 
@@ -112,7 +103,8 @@ public class OrganizerController : Controller
     public async Task<IActionResult> Stats()
     {
         var user = await _userManager.GetUserAsync(User);
-        Guid organizerId = user?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
+        if (user == null) return Challenge();
+        Guid organizerId = user.Id;
 
         var opportunities = await _opportunityRepository.GetByOrganizerIdAsync(organizerId);
         var allApplications = new List<Application>();

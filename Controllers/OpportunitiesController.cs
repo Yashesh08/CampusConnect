@@ -104,18 +104,9 @@ public class OpportunitiesController : Controller
         }
 
         var user = await _userManager.GetUserAsync(User);
-        Guid organizerId;
-        
-        if (user != null)
-        {
-            organizerId = user.Id;
-        }
-        else
-        {
-            var defaultUser = (await _userManager.GetUsersInRoleAsync("Faculty")).FirstOrDefault() 
-                              ?? (await _userManager.GetUsersInRoleAsync("Admin")).FirstOrDefault();
-            organizerId = defaultUser?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
-        }
+        // SECURITY FIX (V006): No fallback — organizer must be the authenticated user
+        if (user == null) return Challenge();
+        Guid organizerId = user.Id;
 
         var opportunity = new Opportunity
         {

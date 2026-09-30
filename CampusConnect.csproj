@@ -21,4 +21,11 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="CampusConnect.Tests\**" />
+    <Content Remove="CampusConnect.Tests\**" />
+    <EmbeddedResource Remove="CampusConnect.Tests\**" />
+    <None Remove="CampusConnect.Tests\**" />
+  </ItemGroup>
+
 </Project>

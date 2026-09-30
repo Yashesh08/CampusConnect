@@ -268,6 +268,18 @@ public class StudentProfilesController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveSkill(int studentSkillId)
     {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var profile = await _repository.GetByUserIdAsync(user.Id);
+        if (profile == null) return NotFound();
+
+        // SECURITY FIX (V001): Verify the skill belongs to the current user before deleting
+        if (!profile.StudentSkills.Any(ss => ss.StudentSkillId == studentSkillId))
+        {
+            return Forbid();
+        }
+
         await _repository.RemoveSkillAsync(studentSkillId);
         return RedirectToAction(nameof(ManageSkills));
     }

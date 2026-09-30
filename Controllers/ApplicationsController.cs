@@ -40,22 +40,15 @@ public class ApplicationsController : Controller
         }
 
         var user = await _userManager.GetUserAsync(User);
-        StudentProfile? studentProfile = null;
+        if (user == null) return Challenge();
 
-        if (user != null)
-        {
-            studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
-        }
+        var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
 
-        // Fallback for standalone demo testing if no logged in user profile found
+        // SECURITY FIX (V002): Do NOT fall back to another student's profile
         if (studentProfile == null)
         {
-            var profiles = await _studentProfileRepository.GetAllAsync();
-            studentProfile = profiles.FirstOrDefault() ?? new StudentProfile
-            {
-                ProfileId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
-                UserId = Guid.Parse("22222222-2222-2222-2222-222222222222")
-            };
+            TempData["ErrorMessage"] = "You must create a student profile before applying.";
+            return RedirectToAction("Create", "StudentProfiles");
         }
 
         // Check if deadline has passed
@@ -92,19 +85,11 @@ public class ApplicationsController : Controller
     public async Task<IActionResult> MyApplications(ApplicationStatus? status)
     {
         var user = await _userManager.GetUserAsync(User);
-        StudentProfile? studentProfile = null;
+        if (user == null) return Challenge();
 
-        if (user != null)
-        {
-            studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
-        }
+        var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
 
-        if (studentProfile == null)
-        {
-            var profiles = await _studentProfileRepository.GetAllAsync();
-            studentProfile = profiles.FirstOrDefault();
-        }
-
+        // SECURITY FIX (V003): Do NOT fall back to another student's profile
         if (studentProfile == null)
         {
             ViewBag.CurrentStatusFilter = status;
