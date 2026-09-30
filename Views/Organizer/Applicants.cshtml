@@ -5,8 +5,9 @@
     ViewData["Title"] = $"Applicants - {opportunity?.Title}";
 }
 
-<div class="mb-3">
+<div class="mb-3 d-flex justify-content-between align-items-center">
     <a asp-action="Dashboard" class="btn btn-sm btn-outline-secondary">&larr; Back to Dashboard</a>
+    <a asp-action="Stats" class="btn btn-sm btn-outline-info">📊 View Analytics & Stats</a>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,7 +18,7 @@
     @if (opportunity != null && Model.Any())
     {
         <a asp-action="ExportCsv" asp-route-id="@opportunity.OpportunityId" class="btn btn-outline-success">
-            &darr; Export CSV
+            &darr; Export Applicants CSV
         </a>
     }
 </div>
@@ -26,6 +27,14 @@
 {
     <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
         @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        @TempData["ErrorMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
@@ -39,79 +48,173 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Applicant</th>
-                        <th>Batch / Dept</th>
-                        <th>Applied Date</th>
-                        <th>Current Status</th>
-                        <th>Remarks</th>
-                        <th class="text-end">Update Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var app in Model)
-                    {
-                        var studentName = app.Student?.User?.Email ?? "Student Applicant";
-                        <tr>
-                            <td>
-                                <strong>@studentName</strong>
-                                @if (app.Student?.User != null)
-                                {
-                                    <br /><small class="text-muted">@app.Student.User.Email</small>
-                                }
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border me-1">Batch: @(app.Student?.BatchYear.ToString() ?? "N/A")</span>
-                            </td>
-                            <td class="text-muted small">@app.AppliedAt.ToString("MMM dd, yyyy HH:mm")</td>
-                            <td>
-                                @switch (app.Status)
-                                {
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Applied:
-                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1">Applied</span>
-                                        break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.UnderReview:
-                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1">Under Review</span>
-                                        break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Shortlisted:
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">Shortlisted</span>
-                                        break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Selected:
-                                        <span class="badge bg-success px-3 py-1">Selected</span>
-                                        break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Rejected:
-                                        <span class="badge bg-danger px-3 py-1">Rejected</span>
-                                        break;
-                                }
-                            </td>
-                            <td>
-                                <span class="fst-italic small text-secondary">@(string.IsNullOrWhiteSpace(app.OrganizerRemarks) ? "-" : app.OrganizerRemarks)</span>
-                            </td>
-                            <td class="text-end">
-                                <form asp-action="UpdateStatus" method="post" class="d-inline-flex gap-1 align-items-center justify-content-end">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="applicationId" value="@app.ApplicationId" />
-                                    
-                                    <select name="status" class="form-select form-select-sm" style="width: 140px;">
-                                        @foreach (var statusVal in Enum.GetValues<CampusConnect.Models.Enums.ApplicationStatus>())
-                                        {
-                                            <option value="@statusVal" selected="@(app.Status == statusVal)">@statusVal</option>
-                                        }
-                                    </select>
-                                    
-                                    <input type="text" name="remarks" value="@app.OrganizerRemarks" placeholder="Remarks..." class="form-control form-control-sm" style="width: 130px;" />
-                                    
-                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <!-- Bulk Action Form -->
+    <form asp-action="BulkUpdateStatus" method="post" id="bulkForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="opportunityId" value="@opportunity?.OpportunityId" />
+
+        <div class="card border-0 shadow-sm mb-3 bg-light">
+            <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" id="selectAll" class="form-check-input" />
+                    <label for="selectAll" class="form-check-label fw-semibold me-2">Select All Applicants</label>
+                    <span id="selectedCountBadge" class="badge bg-secondary">0 Selected</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+                    <input type="text" name="remarks" placeholder="Bulk remarks / feedback..." class="form-control form-control-sm" style="max-width: 260px;" />
+                    
+                    <select name="status" class="form-select form-select-sm" style="max-width: 160px;" required>
+                        <option value="">-- Change Status To --</option>
+                        @foreach (var statusVal in Enum.GetValues<CampusConnect.Models.Enums.ApplicationStatus>())
+                        {
+                            <option value="@statusVal">@statusVal</option>
+                        }
+                    </select>
+
+                    <button type="submit" class="btn btn-sm btn-primary px-3" onclick="return confirm('Apply status update to all selected applicants?');">
+                        Apply Bulk Status
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>Applicant</th>
+                            <th>Batch / Dept</th>
+                            <th>Applied Date</th>
+                            <th>Current Status</th>
+                            <th>Organizer Remarks</th>
+                            <th class="text-end">Individual Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var app in Model)
+                        {
+                            var studentName = app.Student?.User?.Email ?? app.Student?.RollNumber ?? "Student Applicant";
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="applicationIds" value="@app.ApplicationId" class="form-check-input app-checkbox" />
+                                </td>
+                                <td>
+                                    <strong>@studentName</strong>
+                                    @if (app.Student?.User != null)
+                                    {
+                                        <br /><small class="text-muted">@app.Student.User.Email</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border me-1">Batch: @(app.Student?.BatchYear.ToString() ?? "N/A")</span>
+                                </td>
+                                <td class="text-muted small">@app.AppliedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>
+                                    @switch (app.Status)
+                                    {
+                                        case CampusConnect.Models.Enums.ApplicationStatus.Applied:
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1">Applied</span>
+                                            break;
+                                        case CampusConnect.Models.Enums.ApplicationStatus.UnderReview:
+                                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1">Under Review</span>
+                                            break;
+                                        case CampusConnect.Models.Enums.ApplicationStatus.Shortlisted:
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">Shortlisted</span>
+                                            break;
+                                        case CampusConnect.Models.Enums.ApplicationStatus.Selected:
+                                            <span class="badge bg-success px-3 py-1">Selected</span>
+                                            break;
+                                        case CampusConnect.Models.Enums.ApplicationStatus.Rejected:
+                                            <span class="badge bg-danger px-3 py-1">Rejected</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <span class="fst-italic small text-secondary">@(string.IsNullOrWhiteSpace(app.OrganizerRemarks) ? "-" : app.OrganizerRemarks)</span>
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal-@app.ApplicationId">
+                                        Edit Status
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+
+    <!-- Individual Edit Modals -->
+    @foreach (var app in Model)
+    {
+        <div class="modal fade" id="editModal-@app.ApplicationId" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="applicationId" value="@app.ApplicationId" />
+
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Update Applicant Status</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">
+                                <strong>Applicant:</strong> @(app.Student?.User?.Email ?? "Student")<br />
+                                <small class="text-muted">Applied on @app.AppliedAt.ToString("MMM dd, yyyy HH:mm")</small>
+                            </p>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Application Status</label>
+                                <select name="status" class="form-select">
+                                    @foreach (var statusVal in Enum.GetValues<CampusConnect.Models.Enums.ApplicationStatus>())
+                                    {
+                                        <option value="@statusVal" selected="@(app.Status == statusVal)">@statusVal</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Organizer Remarks / Feedback</label>
+                                <textarea name="remarks" rows="3" class="form-control" placeholder="Provide feedback or remarks for the candidate...">@app.OrganizerRemarks</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.app-checkbox');
+            const badge = document.getElementById('selectedCountBadge');
+
+            function updateCount() {
+                const checkedCount = document.querySelectorAll('.app-checkbox:checked').length;
+                if (badge) badge.textContent = `${checkedCount} Selected`;
+            }
+
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                    updateCount();
+                });
+            }
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateCount);
+            });
+        });
+    </script>
 }

@@ -9,7 +9,10 @@
         <h2 class="fw-bold mb-1">Campus Opportunities</h2>
         <p class="text-muted mb-0">Browse events, research projects, internships, and hackathons.</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">+ Post Opportunity</a>
+    <div class="d-flex gap-2">
+        <a asp-action="Calendar" class="btn btn-outline-info shadow-sm">📅 Deadlines Calendar</a>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">+ Post Opportunity</a>
+    </div>
 </div>
 
 @if (TempData["SuccessMessage"] != null)

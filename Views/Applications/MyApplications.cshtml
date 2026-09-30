@@ -1,13 +1,15 @@
 @model IEnumerable<CampusConnect.Models.Application>
+@using CampusConnect.Models.Enums
 
 @{
     ViewData["Title"] = "My Applications";
+    var currentFilter = ViewBag.CurrentStatusFilter as ApplicationStatus?;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">My Applications</h2>
-        <p class="text-muted mb-0">Track the status of your submitted applications for research, events, and internships.</p>
+        <p class="text-muted mb-0">Track application statuses, organizer remarks, and submission timelines.</p>
     </div>
     <a asp-controller="Opportunities" asp-action="Index" class="btn btn-outline-primary">Browse Opportunities</a>
 </div>
@@ -20,25 +22,50 @@
     </div>
 }
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Status Filter Tabs -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-2 d-flex flex-wrap gap-2 align-items-center">
+        <span class="fw-semibold text-muted small ms-2 me-1">Filter Status:</span>
+        <a asp-action="MyApplications" class="btn btn-sm @(!currentFilter.HasValue ? "btn-primary" : "btn-light border")">
+            All Applications
+        </a>
+        @foreach (var statusVal in Enum.GetValues<ApplicationStatus>())
+        {
+            <a asp-action="MyApplications" asp-route-status="@statusVal" class="btn btn-sm @(currentFilter == statusVal ? "btn-primary" : "btn-light border")">
+                @statusVal
+            </a>
+        }
+    </div>
+</div>
+
 @if (!Model.Any())
 {
     <div class="text-center py-5 bg-light rounded-3 border">
-        <h4 class="text-muted fw-normal">You haven't applied to any opportunities yet.</h4>
+        <h4 class="text-muted fw-normal">No applications found matching your criteria.</h4>
         <p class="text-muted mb-3">Explore open positions on campus and submit your application!</p>
         <a asp-controller="Opportunities" asp-action="Index" class="btn btn-primary">Find Opportunities</a>
     </div>
 }
 else
 {
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm mb-4">
         <div class="table-responsive">
             <table class="table align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Opportunity</th>
+                        <th>Category & Mode</th>
                         <th>Applied On</th>
-                        <th>Status</th>
-                        <th>Organizer Remarks</th>
+                        <th>Current Status</th>
+                        <th>Organizer Feedback</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -49,25 +76,29 @@ else
                             <td>
                                 <strong>@app.Opportunity?.Title</strong>
                                 <br />
-                                <small class="text-muted">@app.Opportunity?.Category &bull; @app.Opportunity?.WorkMode</small>
+                                <small class="text-muted">@(app.Opportunity?.TargetDepartment?.DepartmentName ?? "All Departments")</small>
                             </td>
-                            <td class="text-muted small">@app.AppliedAt.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">@app.Opportunity?.Category</span>
+                                <span class="badge bg-light text-dark border">@app.Opportunity?.WorkMode</span>
+                            </td>
+                            <td class="text-muted small">@app.AppliedAt.ToString("MMM dd, yyyy HH:mm")</td>
                             <td>
                                 @switch (app.Status)
                                 {
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Applied:
+                                    case ApplicationStatus.Applied:
                                         <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1">Submitted</span>
                                         break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.UnderReview:
+                                    case ApplicationStatus.UnderReview:
                                         <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1">Under Review</span>
                                         break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Shortlisted:
+                                    case ApplicationStatus.Shortlisted:
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">Shortlisted</span>
                                         break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Selected:
+                                    case ApplicationStatus.Selected:
                                         <span class="badge bg-success px-3 py-1">Selected</span>
                                         break;
-                                    case CampusConnect.Models.Enums.ApplicationStatus.Rejected:
+                                    case ApplicationStatus.Rejected:
                                         <span class="badge bg-danger px-3 py-1">Not Selected</span>
                                         break;
                                 }
@@ -75,7 +106,7 @@ else
                             <td>
                                 @if (!string.IsNullOrWhiteSpace(app.OrganizerRemarks))
                                 {
-                                    <span class="fst-italic text-secondary small">"@app.OrganizerRemarks"</span>
+                                    <span class="fst-italic text-dark small">"@app.OrganizerRemarks"</span>
                                 }
                                 else
                                 {
@@ -83,9 +114,11 @@ else
                                 }
                             </td>
                             <td class="text-end">
-                                <a asp-controller="Opportunities" asp-action="Details" asp-route-id="@app.OpportunityId" class="btn btn-sm btn-outline-secondary me-1">Details</a>
+                                <button type="button" class="btn btn-sm btn-outline-info me-1" data-bs-toggle="modal" data-bs-target="#appDetailModal-@app.ApplicationId">
+                                    View Timeline
+                                </button>
                                 
-                                @if (app.Status == CampusConnect.Models.Enums.ApplicationStatus.Applied || app.Status == CampusConnect.Models.Enums.ApplicationStatus.UnderReview)
+                                @if (app.Status == ApplicationStatus.Applied || app.Status == ApplicationStatus.UnderReview)
                                 {
                                     <form asp-action="Withdraw" asp-route-id="@app.ApplicationId" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to withdraw this application?');">
                                         @Html.AntiForgeryToken()
@@ -99,4 +132,60 @@ else
             </table>
         </div>
     </div>
+
+    <!-- Application Timeline Modals -->
+    @foreach (var app in Model)
+    {
+        <div class="modal fade" id="appDetailModal-@app.ApplicationId" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Application Status & Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3 p-3 bg-light rounded border">
+                            <h6 class="fw-bold mb-1">@app.Opportunity?.Title</h6>
+                            <small class="text-muted">Category: @app.Opportunity?.Category &bull; Work Mode: @app.Opportunity?.WorkMode</small>
+                            <div class="mt-2 text-primary fw-semibold small">Stipend / Salary: @(app.Opportunity?.StipendSalary ?? "Unpaid / N/A")</div>
+                        </div>
+
+                        <!-- Progress / Timeline Tracker -->
+                        <h6 class="fw-bold mb-3">Application Progress</h6>
+                        <div class="d-flex justify-content-between position-relative mb-4 text-center px-2">
+                            <div class="flex-fill">
+                                <div class="badge rounded-circle p-2 @(app.Status >= ApplicationStatus.Applied ? "bg-primary text-white" : "bg-light text-muted border") mb-1">1</div>
+                                <div class="small fw-semibold">Submitted</div>
+                                <small class="text-muted d-block" style="font-size:0.75rem;">@app.AppliedAt.ToString("MMM dd")</small>
+                            </div>
+                            <div class="flex-fill">
+                                <div class="badge rounded-circle p-2 @(app.Status >= ApplicationStatus.UnderReview ? "bg-primary text-white" : "bg-light text-muted border") mb-1">2</div>
+                                <div class="small fw-semibold">Review</div>
+                            </div>
+                            <div class="flex-fill">
+                                <div class="badge rounded-circle p-2 @(app.Status >= ApplicationStatus.Shortlisted ? "bg-primary text-white" : "bg-light text-muted border") mb-1">3</div>
+                                <div class="small fw-semibold">Shortlist</div>
+                            </div>
+                            <div class="flex-fill">
+                                <div class="badge rounded-circle p-2 @(app.Status == ApplicationStatus.Selected ? "bg-success text-white" : app.Status == ApplicationStatus.Rejected ? "bg-danger text-white" : "bg-light text-muted border") mb-1">4</div>
+                                <div class="small fw-semibold">@(app.Status == ApplicationStatus.Rejected ? "Rejected" : "Decision")</div>
+                            </div>
+                        </div>
+
+                        <!-- Feedback section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Organizer Remarks / Feedback:</label>
+                            <div class="p-3 bg-light rounded border fst-italic text-secondary">
+                                @(string.IsNullOrWhiteSpace(app.OrganizerRemarks) ? "No specific feedback provided by the organizer yet." : app.OrganizerRemarks)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a asp-controller="Opportunities" asp-action="Details" asp-route-id="@app.OpportunityId" class="btn btn-outline-secondary">View Opportunity</a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }

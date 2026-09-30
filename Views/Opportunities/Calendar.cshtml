@@ -1,0 +1,111 @@
+@model IEnumerable<CampusConnect.Services.OpportunityCalendarItem>
+
+@{
+    ViewData["Title"] = "Opportunity Deadlines & Events Calendar";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">📅 Opportunity & Deadline Calendar</h2>
+        <p class="text-muted mb-0">Track all upcoming registration deadlines and campus event dates in real-time.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-primary">&larr; Back to List View</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 bg-light rounded-3 border">
+        <h4 class="text-muted fw-normal">No upcoming opportunity events found on the calendar.</h4>
+        <p class="text-muted">Check back later or browse all active opportunities.</p>
+        <a asp-action="Index" class="btn btn-primary">Browse Opportunities</a>
+    </div>
+}
+else
+{
+    <!-- Timeline & Events Feed Cards -->
+    <div class="row g-4">
+        <!-- Upcoming Deadlines Section -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Upcoming Deadlines & Key Dates</h5>
+                    <span class="badge bg-primary">@Model.Count() Events Scheduled</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var item in Model)
+                        {
+                            var isDeadline = item.EventType == "RegistrationDeadline";
+                            var daysLeft = (item.Date - DateTime.UtcNow).Days;
+
+                            <div class="list-group-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge @(isDeadline ? "bg-danger-subtle text-danger border border-danger-subtle" : "bg-success-subtle text-success border border-success-subtle") me-2">
+                                            @(isDeadline ? "⏰ Registration Deadline" : "🎉 Event Day")
+                                        </span>
+                                        <span class="badge bg-light text-dark border me-2">@item.Category</span>
+                                        <span class="badge bg-light text-dark border">@item.WorkMode</span>
+                                    </div>
+                                    <span class="fw-bold fs-6 @(daysLeft <= 3 ? "text-danger" : "text-dark")">
+                                        @item.Date.ToString("MMM dd, yyyy")
+                                    </span>
+                                </div>
+
+                                <h6 class="fw-bold mb-1">
+                                    <a href="@item.Url" class="text-decoration-none text-dark">@item.Title</a>
+                                </h6>
+
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">
+                                        Department: <strong>@item.DepartmentName</strong>
+                                    </small>
+                                    <a href="@item.Url" class="btn btn-sm btn-outline-primary">View Opportunity &rarr;</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Visual Quick Calendar Widget -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-3 mb-4 bg-primary text-white">
+                <h5 class="fw-bold mb-2">💡 Quick Deadline Alert</h5>
+                <p class="mb-0 small">
+                    Opportunities with close deadlines require immediate application submission. Keep your profile and uploaded resume ready!
+                </p>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0">📅 Month View Summary</h6>
+                </div>
+                <div class="card-body">
+                    @{
+                        var groupedByMonth = Model.GroupBy(m => m.Date.ToString("MMMM yyyy"));
+                    }
+                    @foreach (var monthGroup in groupedByMonth)
+                    {
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-primary mb-2 border-bottom pb-1">@monthGroup.Key</h6>
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var ev in monthGroup)
+                                {
+                                    <li class="mb-2 d-flex justify-content-between align-items-center small">
+                                        <span>
+                                            <i class="bi bi-circle-fill me-1 text-info" style="font-size: 0.5rem;"></i>
+                                            @ev.Title
+                                        </span>
+                                        <span class="badge bg-light text-dark border">@ev.Date.ToString("dd MMM")</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
