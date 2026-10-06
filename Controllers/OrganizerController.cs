@@ -1,9 +1,8 @@
-using System.Text;
 using CampusConnect.Models;
 using CampusConnect.Models.Enums;
-using CampusConnect.Repositories;
-using Microsoft.AspNetCore.Identity;
+using CampusConnect.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusConnect.Controllers;
@@ -11,17 +10,14 @@ namespace CampusConnect.Controllers;
 [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
 public class OrganizerController : Controller
 {
-    private readonly IOpportunityRepository _opportunityRepository;
-    private readonly IApplicationRepository _applicationRepository;
+    private readonly IOrganizerService _organizerService;
     private readonly UserManager<User> _userManager;
 
     public OrganizerController(
-        IOpportunityRepository opportunityRepository,
-        IApplicationRepository applicationRepository,
+        IOrganizerService organizerService,
         UserManager<User> userManager)
     {
-        _opportunityRepository = opportunityRepository;
-        _applicationRepository = applicationRepository;
+        _organizerService = organizerService;
         _userManager = userManager;
     }
 
@@ -31,16 +27,8 @@ public class OrganizerController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
-        List<Opportunity> opportunities;
-        if (User.IsInRole("Admin"))
-        {
-            opportunities = await _opportunityRepository.GetAllAsync(status: null);
-        }
-        else
-        {
-            // SECURITY FIX (V005): Use authenticated user's ID directly, no fallback
-            opportunities = await _opportunityRepository.GetByOrganizerIdAsync(user.Id);
-        }
+        bool isAdmin = User.IsInRole("Admin");
+        var opportunities = await _organizerService.GetOrganizerDashboardOpportunitiesAsync(user.Id, isAdmin);
 
         return View(opportunities);
     }
@@ -48,15 +36,14 @@ public class OrganizerController : Controller
     // GET: /Organizer/Applicants/{opportunityId}
     public async Task<IActionResult> Applicants(Guid id)
     {
-        var opportunity = await _opportunityRepository.GetByIdAsync(id);
-        if (opportunity == null)
-        {
-            return NotFound();
-        }
-
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
-        var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
+        if (user == null) return Challenge();
+
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        var (allowed, opportunity, applications) = await _organizerService.GetOpportunityApplicantsAsync(id, user.Id, isPrivileged);
+
+        if (!allowed) return Forbid();
+        if (opportunity == null) return NotFound();
 
         ViewBag.Opportunity = opportunity;
         return View(applications);
@@ -67,19 +54,23 @@ public class OrganizerController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(Guid applicationId, ApplicationStatus status, string? remarks)
     {
-        var application = await _applicationRepository.GetByIdAsync(applicationId);
-        if (application == null)
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        var (success, message) = await _organizerService.UpdateApplicantStatusAsync(applicationId, status, remarks, user.Id, isPrivileged);
+
+        if (!success)
         {
-            return NotFound();
+            if (message.StartsWith("Forbidden")) return Forbid();
+            TempData["ErrorMessage"] = message;
+        }
+        else
+        {
+            TempData["SuccessMessage"] = message;
         }
 
-        var opportunity = await _opportunityRepository.GetByIdAsync(application.OpportunityId);
-        var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
-        await _applicationRepository.UpdateStatusAsync(applicationId, status, remarks);
-
-        TempData["SuccessMessage"] = "Applicant status updated successfully!";
-        return RedirectToAction(nameof(Applicants), new { id = application.OpportunityId });
+        return RedirectToAction(nameof(Dashboard));
     }
 
     // POST: /Organizer/BulkUpdateStatus
@@ -87,22 +78,22 @@ public class OrganizerController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> BulkUpdateStatus(Guid opportunityId, List<Guid> applicationIds, ApplicationStatus status, string? remarks)
     {
-        if (applicationIds == null || !applicationIds.Any())
-        {
-            TempData["ErrorMessage"] = "No applicants selected for bulk update.";
-            return RedirectToAction(nameof(Applicants), new { id = opportunityId });
-        }
-
-        var opportunity = await _opportunityRepository.GetByIdAsync(opportunityId);
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
+        if (user == null) return Challenge();
 
-        foreach (var appId in applicationIds)
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        var (success, message) = await _organizerService.BulkUpdateApplicantStatusAsync(opportunityId, applicationIds, status, remarks, user.Id, isPrivileged);
+
+        if (!success)
         {
-            await _applicationRepository.UpdateStatusAsync(appId, status, remarks);
+            if (message.StartsWith("Forbidden")) return Forbid();
+            TempData["ErrorMessage"] = message;
+        }
+        else
+        {
+            TempData["SuccessMessage"] = message;
         }
 
-        TempData["SuccessMessage"] = $"Bulk updated {applicationIds.Count} applicant(s) to status '{status}'.";
         return RedirectToAction(nameof(Applicants), new { id = opportunityId });
     }
 
@@ -112,48 +103,8 @@ public class OrganizerController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
-        List<Opportunity> opportunities;
-        if (User.IsInRole("Admin"))
-        {
-            opportunities = await _opportunityRepository.GetAllAsync(status: null);
-        }
-        else
-        {
-            // SECURITY FIX (V004): Use authenticated user's ID directly, no fallback
-            opportunities = await _opportunityRepository.GetByOrganizerIdAsync(user.Id);
-        }
-
-        var allApplications = new List<Application>();
-
-        foreach (var opp in opportunities)
-        {
-            var apps = await _applicationRepository.GetByOpportunityIdAsync(opp.OpportunityId);
-            allApplications.AddRange(apps);
-        }
-
-        var totalApps = allApplications.Count;
-        var selectedApps = allApplications.Count(a => a.Status == ApplicationStatus.Selected);
-        var shortlistedApps = allApplications.Count(a => a.Status == ApplicationStatus.Shortlisted);
-        var rejectedApps = allApplications.Count(a => a.Status == ApplicationStatus.Rejected);
-
-        var viewModel = new OrganizerStatsViewModel
-        {
-            TotalOpportunities = opportunities.Count,
-            ActiveOpportunities = opportunities.Count(o => o.ApprovalStatus == ApprovalStatus.Approved),
-            PendingOpportunities = opportunities.Count(o => o.ApprovalStatus == ApprovalStatus.PendingReview),
-            TotalApplications = totalApps,
-            ShortlistedApplications = shortlistedApps,
-            SelectedApplications = selectedApps,
-            RejectedApplications = rejectedApps,
-            AcceptanceRate = totalApps > 0 ? Math.Round((double)selectedApps / totalApps * 100, 1) : 0,
-            ClosingSoon = opportunities
-                .Where(o => o.RegistrationDeadline >= DateTime.UtcNow && o.RegistrationDeadline <= DateTime.UtcNow.AddDays(7))
-                .OrderBy(o => o.RegistrationDeadline)
-                .ToList(),
-            CategoryBreakdown = opportunities
-                .GroupBy(o => o.Category)
-                .ToDictionary(g => g.Key, g => g.Count())
-        };
+        bool isAdmin = User.IsInRole("Admin");
+        var viewModel = await _organizerService.GetOrganizerStatsAsync(user.Id, isAdmin);
 
         return View(viewModel);
     }
@@ -161,48 +112,15 @@ public class OrganizerController : Controller
     // GET: /Organizer/ExportCsv/{opportunityId}
     public async Task<IActionResult> ExportCsv(Guid id)
     {
-        var opportunity = await _opportunityRepository.GetByIdAsync(id);
-        if (opportunity == null)
-        {
-            return NotFound();
-        }
-
         var user = await _userManager.GetUserAsync(User);
-        if (opportunity?.OrganizerId != user?.Id && !User.IsInRole("Admin") && !User.IsInRole("Hod")) return Forbid();
-        var applications = await _applicationRepository.GetByOpportunityIdAsync(id);
+        if (user == null) return Challenge();
 
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        var (allowed, fileName, fileBytes) = await _organizerService.ExportCsvAsync(id, user.Id, isPrivileged);
 
-        var builder = new StringBuilder();
-        builder.AppendLine("ApplicationId,StudentEmail,BatchYear,Status,AppliedAt,OrganizerRemarks");
-
-        foreach (var app in applications)
-        {
-            var studentName = app.Student?.User?.Email ?? app.Student?.RollNumber ?? "Student";
-            var batch = app.Student?.BatchYear.ToString() ?? "N/A";
-            var status = app.Status.ToString();
-            var appliedAt = app.AppliedAt.ToString("yyyy-MM-dd HH:mm:ss");
-            var remarks = app.OrganizerRemarks?.Replace(",", " ") ?? "";
-
-            builder.AppendLine($"{app.ApplicationId},\"{studentName}\",\"{batch}\",\"{status}\",\"{appliedAt}\",\"{remarks}\"");
-        }
-
-        var fileBytes = Encoding.UTF8.GetBytes(builder.ToString());
-        var fileName = $"Applicants_{opportunity.Title.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv";
+        if (!allowed) return Forbid();
+        if (fileBytes == null || fileName == null) return NotFound();
 
         return File(fileBytes, "text/csv", fileName);
     }
-}
-
-public class OrganizerStatsViewModel
-{
-    public int TotalOpportunities { get; set; }
-    public int ActiveOpportunities { get; set; }
-    public int PendingOpportunities { get; set; }
-    public int TotalApplications { get; set; }
-    public int ShortlistedApplications { get; set; }
-    public int SelectedApplications { get; set; }
-    public int RejectedApplications { get; set; }
-    public double AcceptanceRate { get; set; }
-    public List<Opportunity> ClosingSoon { get; set; } = new();
-    public Dictionary<OpportunityCategory, int> CategoryBreakdown { get; set; } = new();
 }

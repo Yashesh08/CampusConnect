@@ -23,6 +23,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<Connection> Connections => Set<Connection>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<SavedOpportunity> SavedOpportunities => Set<SavedOpportunity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -148,6 +149,23 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .WithMany()
             .HasForeignKey(a => a.StudentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure SavedOpportunity relationships
+        modelBuilder.Entity<SavedOpportunity>()
+            .HasOne(so => so.Opportunity)
+            .WithMany()
+            .HasForeignKey(so => so.OpportunityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SavedOpportunity>()
+            .HasOne(so => so.Student)
+            .WithMany()
+            .HasForeignKey(so => so.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SavedOpportunity>()
+            .HasIndex(so => new { so.StudentId, so.OpportunityId })
+            .IsUnique();
 
         // Configure Announcement relationships
         modelBuilder.Entity<Announcement>()

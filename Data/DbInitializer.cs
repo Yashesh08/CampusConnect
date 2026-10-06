@@ -17,7 +17,7 @@ public static class DbInitializer
         // Ensure database is created and migrated
         await dbContext.Database.MigrateAsync();
 
-        // Ensure tables for announcements, connections, and messages exist in SQLite
+        // Ensure auxiliary tables for SQLite
         await dbContext.Database.ExecuteSqlRawAsync(@"
             CREATE TABLE IF NOT EXISTS ""announcements"" (
                 ""announcement_id"" TEXT NOT NULL CONSTRAINT ""PK_announcements"" PRIMARY KEY,
@@ -65,8 +65,10 @@ public static class DbInitializer
         {
             var departments = new List<Department>
             {
-                new Department { DepartmentName = "Computer Science & Engineering", DepartmentCode = "CSE" },
+                new Department { DepartmentName = "Computer Engineering", DepartmentCode = "CSE" },
                 new Department { DepartmentName = "Electrical Engineering", DepartmentCode = "EE" },
+                new Department { DepartmentName = "Information Technology", DepartmentCode = "IT" },
+                new Department { DepartmentName = "Civil Engineering", DepartmentCode = "CE" },
                 new Department { DepartmentName = "Mechanical Engineering", DepartmentCode = "ME" },
                 new Department { DepartmentName = "Mathematics", DepartmentCode = "MATH" }
             };
@@ -75,6 +77,10 @@ public static class DbInitializer
         }
 
         var cseDept = await dbContext.Departments.FirstOrDefaultAsync(d => d.DepartmentCode == "CSE");
+        var eeDept = await dbContext.Departments.FirstOrDefaultAsync(d => d.DepartmentCode == "EE");
+        var itDept = await dbContext.Departments.FirstOrDefaultAsync(d => d.DepartmentCode == "IT");
+        var ceDept = await dbContext.Departments.FirstOrDefaultAsync(d => d.DepartmentCode == "CE");
+        var meDept = await dbContext.Departments.FirstOrDefaultAsync(d => d.DepartmentCode == "ME");
         var mathDept = await dbContext.Departments.FirstOrDefaultAsync(d => d.DepartmentCode == "MATH");
 
         // 3. Seed Skills
@@ -87,16 +93,18 @@ public static class DbInitializer
                 new Skill { SkillName = "JavaScript", Category = "Frontend Development" },
                 new Skill { SkillName = "SQL", Category = "Database" },
                 new Skill { SkillName = "Python", Category = "Data Science" },
-                new Skill { SkillName = "Problem Solving", Category = "Soft Skill" }
+                new Skill { SkillName = "Problem Solving", Category = "Soft Skill" },
+                new Skill { SkillName = "UI/UX Design", Category = "Design" },
+                new Skill { SkillName = "IoT & Hardware", Category = "Electronics" },
+                new Skill { SkillName = "CAD & Structural Analysis", Category = "Engineering" }
             };
             await dbContext.Skills.AddRangeAsync(defaultSkills);
             await dbContext.SaveChangesAsync();
         }
 
-        // 4. Helper function to create users with profiles
         var defaultPassword = config["SeedPassword"] ?? "Password123!";
 
-        // Admin User
+        // 4. Seed Admin User
         var adminEmail = "admin@campusconnect.edu";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
@@ -130,7 +138,7 @@ public static class DbInitializer
             await dbContext.SaveChangesAsync();
         }
 
-        // HOD User
+        // 5. Seed HOD User
         var hodEmail = "hod.cse@campusconnect.edu";
         User? hodUser = await userManager.FindByEmailAsync(hodEmail);
         if (hodUser == null)
@@ -154,7 +162,7 @@ public static class DbInitializer
                     {
                         UserId = hodUser.Id,
                         DepartmentId = cseDept.DepartmentId,
-                        Designation = "Head of Department - Computer Science",
+                        Designation = "Head of Department - Computer Engineering",
                         CabinNumber = "CSE-101"
                     };
                     await dbContext.FacultyProfiles.AddAsync(hodProfile);
@@ -163,13 +171,10 @@ public static class DbInitializer
             }
         }
 
-        // Test Users (Faculty & Students) only in Development
-        if (env.IsDevelopment())
-        {
-            // Faculty User 1
-            var faculty1Email = "faculty.smith@campusconnect.edu";
-            User? faculty1 = await userManager.FindByEmailAsync(faculty1Email);
-            if (faculty1 == null)
+        // 6. Seed Faculty & Students (Dev environment & Seeding)
+        var faculty1Email = "faculty.smith@campusconnect.edu";
+        User? faculty1 = await userManager.FindByEmailAsync(faculty1Email);
+        if (faculty1 == null)
         {
             faculty1 = new User
             {
@@ -199,40 +204,6 @@ public static class DbInitializer
             }
         }
 
-        // Faculty User 2
-        var faculty2Email = "faculty.jones@campusconnect.edu";
-        User? faculty2 = await userManager.FindByEmailAsync(faculty2Email);
-        if (faculty2 == null)
-        {
-            faculty2 = new User
-            {
-                UserName = faculty2Email,
-                Email = faculty2Email,
-                EmailConfirmed = true,
-                Role = UserRole.Faculty,
-                Status = UserStatus.Active,
-                CreatedAt = DateTime.UtcNow
-            };
-            var result = await userManager.CreateAsync(faculty2, defaultPassword);
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(faculty2, UserRole.Faculty.ToString());
-                if (mathDept != null)
-                {
-                    var fp = new FacultyProfile
-                    {
-                        UserId = faculty2.Id,
-                        DepartmentId = mathDept.DepartmentId,
-                        Designation = "Professor",
-                        CabinNumber = "MATH-105"
-                    };
-                    await dbContext.FacultyProfiles.AddAsync(fp);
-                    await dbContext.SaveChangesAsync();
-                }
-            }
-        }
-
-        // Student User 1
         var student1Email = "student.alice@campusconnect.edu";
         User? student1 = await userManager.FindByEmailAsync(student1Email);
         StudentProfile? student1Profile = null;
@@ -260,9 +231,7 @@ public static class DbInitializer
                         DepartmentId = cseDept.DepartmentId,
                         BatchYear = 2024,
                         Bio = "Passionate computer science student interested in full-stack engineering.",
-                        ProfileCompletionScore = 85,
-                        GitHubUrl = "https://github.com/alicejohnson",
-                        LinkedInUrl = "https://linkedin.com/in/alicejohnson"
+                        ProfileCompletionScore = 85
                     };
                     await dbContext.StudentProfiles.AddAsync(student1Profile);
                     await dbContext.SaveChangesAsync();
@@ -274,7 +243,6 @@ public static class DbInitializer
             student1Profile = await dbContext.StudentProfiles.FirstOrDefaultAsync(sp => sp.UserId == student1.Id);
         }
 
-        // Student User 2
         var student2Email = "student.bob@campusconnect.edu";
         User? student2 = await userManager.FindByEmailAsync(student2Email);
         if (student2 == null)
@@ -309,7 +277,7 @@ public static class DbInitializer
             }
         }
 
-        // 5. Seed Faculty Office Hours
+        // 7. Seed Faculty Office Hours
         if (faculty1 != null && !await dbContext.FacultyOfficeHours.AnyAsync())
         {
             var officeHours = new List<FacultyOfficeHour>
@@ -317,24 +285,16 @@ public static class DbInitializer
                 new FacultyOfficeHour
                 {
                     FacultyUserId = faculty1.Id,
-                    StartTime = DateTime.UtcNow.AddDays(1).Date.AddHours(10), // Tomorrow 10:00 AM
+                    StartTime = DateTime.UtcNow.AddDays(1).Date.AddHours(10),
                     EndTime = DateTime.UtcNow.AddDays(1).Date.AddHours(11),
                     IsBooked = false
-                },
-                new FacultyOfficeHour
-                {
-                    FacultyUserId = faculty1.Id,
-                    StartTime = DateTime.UtcNow.AddDays(2).Date.AddHours(14), // Day after tomorrow 2:00 PM
-                    EndTime = DateTime.UtcNow.AddDays(2).Date.AddHours(15),
-                    IsBooked = student1Profile != null,
-                    BookedByStudentId = student1Profile?.ProfileId
                 }
             };
             await dbContext.FacultyOfficeHours.AddRangeAsync(officeHours);
             await dbContext.SaveChangesAsync();
         }
 
-        // 6. Seed Grievances & Grievance Logs
+        // 8. Seed Grievances
         if (!await dbContext.Grievances.AnyAsync() && cseDept != null && student1 != null && hodUser != null)
         {
             var grievance1 = new Grievance
@@ -350,113 +310,151 @@ public static class DbInitializer
                 SlaDueAt = DateTime.UtcNow.AddDays(3),
                 CreatedAt = DateTime.UtcNow.AddDays(-1)
             };
-
-            var grievance2 = new Grievance
-            {
-                ComplainantUserId = null,
-                IsAnonymous = true,
-                Category = GrievanceCategory.Academic,
-                DepartmentId = cseDept.DepartmentId,
-                Description = "Request for additional library seating and reference book copies prior to mid-term exams.",
-                Priority = GrievancePriority.Medium,
-                AssignedToUserId = null,
-                Status = GrievanceStatus.Submitted,
-                SlaDueAt = DateTime.UtcNow.AddDays(5),
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await dbContext.Grievances.AddRangeAsync(grievance1, grievance2);
-            await dbContext.SaveChangesAsync();
-
-            var log1 = new GrievanceLog
-            {
-                GrievanceId = grievance1.GrievanceId,
-                UpdatedByUserId = hodUser.Id,
-                StatusChangedTo = GrievanceStatus.InProgress.ToString(),
-                ResolutionNote = "Assigned IT technician to inspect display cabling and switch setup.",
-                Timestamp = DateTime.UtcNow.AddHours(-6)
-            };
-
-            await dbContext.GrievanceLogs.AddAsync(log1);
+            await dbContext.Grievances.AddAsync(grievance1);
             await dbContext.SaveChangesAsync();
         }
 
-        // 7. Seed Announcements
-        if (!await dbContext.Announcements.AnyAsync() && hodUser != null && faculty1 != null && cseDept != null)
+        // 9. Seed Announcements
+        if (!await dbContext.Announcements.AnyAsync() && hodUser != null)
         {
-            var announcements = new List<Announcement>
+            var announcement = new Announcement
             {
-                new Announcement
+                AnnouncementId = Guid.NewGuid(),
+                AuthorUserId = hodUser.Id,
+                DepartmentId = null,
+                Title = "Annual Campus Innovation & Hackathon 2026 Announced",
+                Content = "We are thrilled to announce the CampusConnect Annual Hackathon 2026. Teams from all academic departments are invited to register.",
+                CreatedAt = DateTime.UtcNow.AddDays(-2)
+            };
+            await dbContext.Announcements.AddAsync(announcement);
+            await dbContext.SaveChangesAsync();
+        }
+
+        // 10. Seed Opportunities (Clean checks before insertion to prevent duplicate inserts on restart)
+        if (!await dbContext.Opportunities.AnyAsync() && faculty1 != null)
+        {
+            var csharpSkill = await dbContext.Skills.FirstOrDefaultAsync(s => s.SkillName == "C#");
+            var pythonSkill = await dbContext.Skills.FirstOrDefaultAsync(s => s.SkillName == "Python");
+            var iotSkill = await dbContext.Skills.FirstOrDefaultAsync(s => s.SkillName == "IoT & Hardware");
+            var uiSkill = await dbContext.Skills.FirstOrDefaultAsync(s => s.SkillName == "UI/UX Design");
+            var cadSkill = await dbContext.Skills.FirstOrDefaultAsync(s => s.SkillName == "CAD & Structural Analysis");
+
+            var opportunities = new List<Opportunity>
+            {
+                // Opportunity 1 (Computer Engineering)
+                new Opportunity
                 {
-                    AnnouncementId = Guid.NewGuid(),
-                    AuthorUserId = hodUser.Id,
-                    DepartmentId = null, // College-wide!
-                    Title = "Annual Campus Innovation & Hackathon 2026 Announced",
-                    Content = "We are thrilled to announce the CampusConnect Annual Hackathon 2026. Teams from all academic departments are invited to register. Cash prizes and internship fast-tracks will be awarded to top finishers.",
-                    CreatedAt = DateTime.UtcNow.AddDays(-2)
+                    OpportunityId = Guid.NewGuid(),
+                    OrganizerId = faculty1.Id,
+                    Title = "AI-Driven Campus Bot Development",
+                    Description = "R&D project building an intelligent conversational bot for student queries, campus navigation, and automated academic schedule reminders.",
+                    Category = OpportunityCategory.ResearchAndDevelopment,
+                    TargetDepartmentId = cseDept?.DepartmentId,
+                    WorkMode = WorkMode.Hybrid,
+                    StipendSalary = "$500 / month",
+                    RegistrationDeadline = DateTime.UtcNow.AddDays(14),
+                    EventDate = DateTime.UtcNow.AddDays(20),
+                    Capacity = 3,
+                    ApprovalStatus = ApprovalStatus.Approved
                 },
-                new Announcement
+
+                // Opportunity 2 (Electrical Engineering)
+                new Opportunity
                 {
-                    AnnouncementId = Guid.NewGuid(),
-                    AuthorUserId = faculty1.Id,
-                    DepartmentId = cseDept.DepartmentId, // CSE Department specific
-                    Title = "CSE Mid-Term Project Submissions & Code Reviews",
-                    Content = "All CSE 3rd and 4th year students must submit their project repositories by next Friday. Ensure your README and deployment instructions are up to date.",
-                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                    OpportunityId = Guid.NewGuid(),
+                    OrganizerId = faculty1.Id,
+                    Title = "Solar Powered IoT Weather Station",
+                    Description = "Hardware project designing and deploying solar-powered IoT micro-weather stations across university campus grounds.",
+                    Category = OpportunityCategory.HardwareProject,
+                    TargetDepartmentId = eeDept?.DepartmentId,
+                    WorkMode = WorkMode.Onsite,
+                    StipendSalary = "$600 / month + Lab Pass",
+                    RegistrationDeadline = DateTime.UtcNow.AddDays(20),
+                    Capacity = 4,
+                    ApprovalStatus = ApprovalStatus.Approved
+                },
+
+                // Opportunity 3 (Information Technology)
+                new Opportunity
+                {
+                    OpportunityId = Guid.NewGuid(),
+                    OrganizerId = faculty1.Id,
+                    Title = "Annual Tech Fest UI/UX Redesign",
+                    Description = "Design & media project focusing on wireframing, interactive prototyping, and frontend UI redesign for the main campus Tech Fest portal.",
+                    Category = OpportunityCategory.DesignAndMedia,
+                    TargetDepartmentId = itDept?.DepartmentId,
+                    WorkMode = WorkMode.Remote,
+                    StipendSalary = "Certificate & $400 Stipend",
+                    RegistrationDeadline = DateTime.UtcNow.AddDays(10),
+                    Capacity = 2,
+                    ApprovalStatus = ApprovalStatus.Approved
+                },
+
+                // Opportunity 4 (Civil Engineering)
+                new Opportunity
+                {
+                    OpportunityId = Guid.NewGuid(),
+                    OrganizerId = faculty1.Id,
+                    Title = "Structural Load Analysis Workshop Assistant",
+                    Description = "Lab assistance opportunity helping prepare simulation software, load-testing models, and assisting students during stress-strain testing labs.",
+                    Category = OpportunityCategory.LabAssistance,
+                    TargetDepartmentId = ceDept?.DepartmentId,
+                    WorkMode = WorkMode.Onsite,
+                    StipendSalary = "$350 / month",
+                    RegistrationDeadline = DateTime.UtcNow.AddDays(15),
+                    EventDate = DateTime.UtcNow.AddDays(18),
+                    Capacity = 5,
+                    ApprovalStatus = ApprovalStatus.Approved
+                },
+
+                // Opportunity 5 (Mechanical Engineering) - Kept PendingReview for HOD approval demo live!
+                new Opportunity
+                {
+                    OpportunityId = Guid.NewGuid(),
+                    OrganizerId = faculty1.Id,
+                    Title = "Robotics Competition Operations Volunteer",
+                    Description = "Event management role overseeing logistics, arena setup, safety compliance, and team coordination during the upcoming State Robotics Expo.",
+                    Category = OpportunityCategory.EventManagement,
+                    TargetDepartmentId = meDept?.DepartmentId,
+                    WorkMode = WorkMode.Onsite,
+                    StipendSalary = "Volunteer Certificate & Food Passes",
+                    RegistrationDeadline = DateTime.UtcNow.AddDays(25),
+                    EventDate = DateTime.UtcNow.AddDays(30),
+                    Capacity = 8,
+                    ApprovalStatus = ApprovalStatus.PendingReview
                 }
             };
-            await dbContext.Announcements.AddRangeAsync(announcements);
+
+            await dbContext.Opportunities.AddRangeAsync(opportunities);
+            await dbContext.SaveChangesAsync();
+
+            // Link skills
+            if (pythonSkill != null) dbContext.OpportunitySkills.Add(new OpportunitySkill { OpportunityId = opportunities[0].OpportunityId, SkillId = pythonSkill.SkillId });
+            if (csharpSkill != null) dbContext.OpportunitySkills.Add(new OpportunitySkill { OpportunityId = opportunities[0].OpportunityId, SkillId = csharpSkill.SkillId });
+            if (iotSkill != null) dbContext.OpportunitySkills.Add(new OpportunitySkill { OpportunityId = opportunities[1].OpportunityId, SkillId = iotSkill.SkillId });
+            if (uiSkill != null) dbContext.OpportunitySkills.Add(new OpportunitySkill { OpportunityId = opportunities[2].OpportunityId, SkillId = uiSkill.SkillId });
+            if (cadSkill != null) dbContext.OpportunitySkills.Add(new OpportunitySkill { OpportunityId = opportunities[3].OpportunityId, SkillId = cadSkill.SkillId });
+
             await dbContext.SaveChangesAsync();
         }
 
-        // 8. Seed Connections & Messages
-        if (!await dbContext.Connections.AnyAsync() && student1 != null && student2 != null && faculty1 != null)
+        // 11. Seed Applications (Clean check)
+        if (!await dbContext.Applications.AnyAsync() && student1Profile != null)
         {
-            var conn1 = new Connection
+            var approvedOpp = await dbContext.Opportunities.FirstOrDefaultAsync(o => o.ApprovalStatus == ApprovalStatus.Approved);
+            if (approvedOpp != null)
             {
-                ConnectionId = Guid.NewGuid(),
-                SenderUserId = student1.Id,
-                ReceiverUserId = student2.Id,
-                Status = ConnectionStatus.Accepted,
-                CreatedAt = DateTime.UtcNow.AddDays(-3)
-            };
-
-            var conn2 = new Connection
-            {
-                ConnectionId = Guid.NewGuid(),
-                SenderUserId = student1.Id,
-                ReceiverUserId = faculty1.Id,
-                Status = ConnectionStatus.Pending,
-                CreatedAt = DateTime.UtcNow.AddDays(-1)
-            };
-
-            await dbContext.Connections.AddRangeAsync(conn1, conn2);
-
-            var messages = new List<Message>
-            {
-                new Message
+                var app = new Application
                 {
-                    MessageId = Guid.NewGuid(),
-                    SenderUserId = student1.Id,
-                    ReceiverUserId = student2.Id,
-                    Content = "Hey Bob! Are you participating in the upcoming Campus Hackathon?",
-                    IsRead = true,
-                    SentAt = DateTime.UtcNow.AddDays(-2).AddHours(1)
-                },
-                new Message
-                {
-                    MessageId = Guid.NewGuid(),
-                    SenderUserId = student2.Id,
-                    ReceiverUserId = student1.Id,
-                    Content = "Hey Alice! Yes, absolutely. Let's form a team. I can cover backend API development.",
-                    IsRead = false,
-                    SentAt = DateTime.UtcNow.AddDays(-2).AddHours(2)
-                }
-            };
-
-            await dbContext.Messages.AddRangeAsync(messages);
-            await dbContext.SaveChangesAsync();
+                    ApplicationId = Guid.NewGuid(),
+                    OpportunityId = approvedOpp.OpportunityId,
+                    StudentId = student1Profile.ProfileId,
+                    Status = ApplicationStatus.Applied,
+                    AppliedAt = DateTime.UtcNow.AddDays(-1)
+                };
+                await dbContext.Applications.AddAsync(app);
+                await dbContext.SaveChangesAsync();
+            }
         }
-        } // End of Development-only seeding
     }
 }

@@ -104,9 +104,18 @@ else
                                     <a asp-action="Applicants" asp-route-id="@opp.OpportunityId" class="btn btn-sm btn-primary">
                                         View Applicants (@applicantCount)
                                     </a>
-                                    <a asp-action="ExportCsv" asp-route-id="@opp.OpportunityId" class="btn btn-sm btn-outline-secondary" title="Export Applicants CSV">
-                                        Export CSV
+                                    <a asp-controller="Opportunities" asp-action="Edit" asp-route-id="@opp.OpportunityId" class="btn btn-sm btn-outline-secondary" title="Edit Opportunity">
+                                        Edit
                                     </a>
+                                    <a asp-action="ExportCsv" asp-route-id="@opp.OpportunityId" class="btn btn-sm btn-outline-secondary" title="Export Applicants CSV">
+                                        CSV
+                                    </a>
+                                    <form method="post" asp-controller="Opportunities" asp-action="Delete" asp-route-id="@opp.OpportunityId" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this opportunity?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Opportunity">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

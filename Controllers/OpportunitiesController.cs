@@ -3,60 +3,67 @@ using CampusConnect.Models.Enums;
 using CampusConnect.Models.ViewModels;
 using CampusConnect.Repositories;
 using CampusConnect.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-using Microsoft.AspNetCore.Authorization;
 
 namespace CampusConnect.Controllers;
 
 [Authorize]
 public class OpportunitiesController : Controller
 {
-    private readonly IOpportunityRepository _opportunityRepository;
+    private readonly IOpportunityService _opportunityService;
+    private readonly ISavedOpportunityService _savedOpportunityService;
     private readonly IApplicationRepository _applicationRepository;
     private readonly IDepartmentRepository _departmentRepository;
     private readonly ISkillRepository _skillRepository;
+    private readonly IStudentProfileRepository _studentProfileRepository;
+    private readonly IFacultyProfileRepository _facultyProfileRepository;
     private readonly IOpportunityCalendarFeed _calendarFeed;
     private readonly UserManager<User> _userManager;
 
     public OpportunitiesController(
-        IOpportunityRepository opportunityRepository,
+        IOpportunityService opportunityService,
+        ISavedOpportunityService savedOpportunityService,
         IApplicationRepository applicationRepository,
         IDepartmentRepository departmentRepository,
         ISkillRepository skillRepository,
+        IStudentProfileRepository studentProfileRepository,
+        IFacultyProfileRepository facultyProfileRepository,
         IOpportunityCalendarFeed calendarFeed,
         UserManager<User> userManager)
     {
-        _opportunityRepository = opportunityRepository;
+        _opportunityService = opportunityService;
+        _savedOpportunityService = savedOpportunityService;
         _applicationRepository = applicationRepository;
         _departmentRepository = departmentRepository;
         _skillRepository = skillRepository;
+        _studentProfileRepository = studentProfileRepository;
+        _facultyProfileRepository = facultyProfileRepository;
         _calendarFeed = calendarFeed;
         _userManager = userManager;
     }
 
-    // GET: /Opportunities (Discovery / Search / Filter)
-    public async Task<IActionResult> Index(string? search, OpportunityCategory? category, WorkMode? mode, int? departmentId)
+    // GET: /Opportunities (Discovery / Search / Filter / Sort / Pagination)
+    public async Task<IActionResult> Index(
+        string? search,
+        OpportunityCategory? category,
+        WorkMode? mode,
+        int? departmentId,
+        string? sortBy,
+        int page = 1,
+        int pageSize = 6)
     {
-        var opportunities = await _opportunityRepository.GetAllAsync(category, mode, ApprovalStatus.Approved, search);
-        
-        if (departmentId.HasValue && departmentId.Value > 0)
+        var user = await _userManager.GetUserAsync(User);
+        Guid? studentId = null;
+        if (user != null && User.IsInRole("Student"))
         {
-            opportunities = opportunities.Where(o => o.TargetDepartmentId == departmentId.Value || o.TargetDepartmentId == null).ToList();
+            var profile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
+            if (profile != null) studentId = profile.ProfileId;
         }
 
-        var departments = await _departmentRepository.GetAllAsync();
-
-        var viewModel = new OpportunityFilterViewModel
-        {
-            SearchQuery = search,
-            Category = category,
-            WorkMode = mode,
-            DepartmentId = departmentId,
-            Opportunities = opportunities,
-            Departments = departments
-        };
+        var viewModel = await _opportunityService.GetFilteredOpportunitiesAsync(
+            search, category, mode, departmentId, sortBy, page, pageSize, studentId);
 
         return View(viewModel);
     }
@@ -64,7 +71,7 @@ public class OpportunitiesController : Controller
     // GET: /Opportunities/Details/{id}
     public async Task<IActionResult> Details(Guid id)
     {
-        var opportunity = await _opportunityRepository.GetByIdAsync(id);
+        var opportunity = await _opportunityService.GetOpportunityByIdAsync(id);
         if (opportunity == null)
         {
             return NotFound();
@@ -72,7 +79,7 @@ public class OpportunitiesController : Controller
 
         var currentUser = await _userManager.GetUserAsync(User);
 
-        // SECURITY FIX (V009): Restrict visibility of unapproved opportunities
+        // Visibility check for unapproved opportunities
         if (opportunity.ApprovalStatus != ApprovalStatus.Approved)
         {
             bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
@@ -85,16 +92,25 @@ public class OpportunitiesController : Controller
         }
 
         bool alreadyApplied = false;
-        if (currentUser != null && currentUser.StudentProfile != null)
+        bool isSaved = false;
+
+        if (currentUser != null)
         {
-            alreadyApplied = await _applicationRepository.HasAlreadyAppliedAsync(id, currentUser.StudentProfile.ProfileId);
+            var studentProfile = await _studentProfileRepository.GetByUserIdAsync(currentUser.Id);
+            if (studentProfile != null)
+            {
+                alreadyApplied = await _applicationRepository.HasAlreadyAppliedAsync(id, studentProfile.ProfileId);
+                isSaved = await _savedOpportunityService.IsSavedAsync(studentProfile.ProfileId, id);
+            }
         }
 
         ViewBag.AlreadyApplied = alreadyApplied;
+        ViewBag.IsSaved = isSaved;
+
         return View(opportunity);
     }
 
-    // GET: /Opportunities/Create (Week 2 - Form)
+    // GET: /Opportunities/Create
     [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
     public async Task<IActionResult> Create()
     {
@@ -103,7 +119,7 @@ public class OpportunitiesController : Controller
         return View(new CreateOpportunityViewModel());
     }
 
-    // POST: /Opportunities/Create (Week 2 - Submit)
+    // POST: /Opportunities/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
@@ -117,31 +133,12 @@ public class OpportunitiesController : Controller
         }
 
         var user = await _userManager.GetUserAsync(User);
-        // SECURITY FIX (V006): No fallback — organizer must be the authenticated user
         if (user == null) return Challenge();
-        Guid organizerId = user.Id;
 
-        var opportunity = new Opportunity
-        {
-            OpportunityId = Guid.NewGuid(),
-            OrganizerId = organizerId,
-            Title = model.Title,
-            Description = model.Description,
-            Category = model.Category,
-            TargetDepartmentId = model.TargetDepartmentId,
-            WorkMode = model.WorkMode,
-            StipendSalary = model.StipendSalary,
-            RegistrationDeadline = model.RegistrationDeadline,
-            EventDate = model.EventDate,
-            Capacity = model.Capacity,
-            ApprovalStatus = ApprovalStatus.PendingReview
-        };
-
-        await _opportunityRepository.AddAsync(opportunity, model.SelectedSkillIds);
+        await _opportunityService.CreateOpportunityAsync(model, user.Id);
 
         TempData["SuccessMessage"] = "Opportunity created successfully! It is currently pending Admin/HOD approval.";
 
-        // Redirect based on role: Hod/Admin can view approvals, others go to their dashboard
         if (User.IsInRole("Hod") || User.IsInRole("Admin"))
         {
             return RedirectToAction(nameof(PendingApprovals));
@@ -149,11 +146,138 @@ public class OpportunitiesController : Controller
         return RedirectToAction("Dashboard", "Organizer");
     }
 
-    // GET: /Opportunities/PendingApprovals (Week 2 - Admin / HOD Approval Workflow)
+    // GET: /Opportunities/Edit/{id}
+    [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        var opp = await _opportunityService.GetOpportunityByIdAsync(id);
+        if (opp == null) return NotFound();
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        if (opp.OrganizerId != user.Id && !isPrivileged)
+        {
+            return Forbid();
+        }
+
+        var editModel = await _opportunityService.GetEditViewModelAsync(id);
+        ViewBag.Departments = await _departmentRepository.GetAllAsync();
+        ViewBag.Skills = await _skillRepository.GetAllAsync();
+        return View(editModel);
+    }
+
+    // POST: /Opportunities/Edit/{id}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
+    public async Task<IActionResult> Edit(Guid id, EditOpportunityViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Departments = await _departmentRepository.GetAllAsync();
+            ViewBag.Skills = await _skillRepository.GetAllAsync();
+            return View(model);
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        bool success = await _opportunityService.UpdateOpportunityAsync(id, model, user.Id, isPrivileged);
+        if (!success)
+        {
+            return Forbid();
+        }
+
+        TempData["SuccessMessage"] = "Opportunity updated successfully!";
+        return RedirectToAction("Dashboard", "Organizer");
+    }
+
+    // POST: /Opportunities/Delete/{id}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Faculty,ClubCoordinator,EventOrganizer,Hod,Admin")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+        bool success = await _opportunityService.DeleteOpportunityAsync(id, user.Id, isPrivileged);
+        if (!success)
+        {
+            return Forbid();
+        }
+
+        TempData["SuccessMessage"] = "Opportunity deleted successfully.";
+        return RedirectToAction("Dashboard", "Organizer");
+    }
+
+    // POST: /Opportunities/Save/{id} (Bookmark)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> Save(Guid id)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
+        if (studentProfile == null)
+        {
+            TempData["ErrorMessage"] = "You must create a student profile to save opportunities.";
+            return RedirectToAction("Create", "StudentProfiles");
+        }
+
+        var (success, message) = await _savedOpportunityService.SaveOpportunityAsync(studentProfile.ProfileId, id);
+        if (success) TempData["SuccessMessage"] = message;
+        else TempData["ErrorMessage"] = message;
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // POST: /Opportunities/Unsave/{id}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> Unsave(Guid id)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
+        if (studentProfile == null) return Forbid();
+
+        var (success, message) = await _savedOpportunityService.UnsaveOpportunityAsync(studentProfile.ProfileId, id);
+        TempData["SuccessMessage"] = message;
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // GET: /Opportunities/Saved (View student's saved bookmarks)
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> Saved()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
+
+        var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
+        if (studentProfile == null)
+        {
+            return View(new List<SavedOpportunity>());
+        }
+
+        var savedOpportunities = await _savedOpportunityService.GetSavedOpportunitiesAsync(studentProfile.ProfileId);
+        return View(savedOpportunities);
+    }
+
+    // GET: /Opportunities/PendingApprovals
     [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> PendingApprovals()
     {
-        var pendingOpps = await _opportunityRepository.GetPendingApprovalsAsync();
+        var pendingOpps = await _opportunityService.GetPendingApprovalsAsync();
         return View(pendingOpps);
     }
 
@@ -163,26 +287,30 @@ public class OpportunitiesController : Controller
     [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> Approve(Guid id)
     {
-        
-        var opp = await _opportunityRepository.GetByIdAsync(id);
-        if (opp == null) return NotFound();
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
 
-        // SECURITY FIX (V010): Only pending opportunities can be approved
-        if (opp.ApprovalStatus != ApprovalStatus.PendingReview)
+        bool isAdmin = User.IsInRole("Admin");
+        bool isHod = User.IsInRole("Hod");
+        int? deptId = null;
+
+        if (isHod && !isAdmin)
         {
-            TempData["ErrorMessage"] = $"Cannot approve opportunity with status '{opp.ApprovalStatus}'. Only pending review opportunities can be approved.";
-            return RedirectToAction(nameof(PendingApprovals));
+            var facProfile = await _facultyProfileRepository.GetByUserIdAsync(user.Id);
+            if (facProfile != null) deptId = facProfile.DepartmentId;
         }
 
-        if (User.IsInRole(UserRole.Hod.ToString()) && !User.IsInRole(UserRole.Admin.ToString())) {
-            var user = await _userManager.GetUserAsync(User);
-            var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
-            var facProfile = facRepo != null ? await facRepo.GetByUserIdAsync(user.Id) : null;
-            if (facProfile == null || opp?.TargetDepartmentId == null || opp.TargetDepartmentId != facProfile.DepartmentId) return Forbid();
+        var (success, message) = await _opportunityService.ApproveOpportunityAsync(id, user.Id, isAdmin, isHod, deptId);
+        if (!success)
+        {
+            if (message.StartsWith("Forbidden")) return Forbid();
+            TempData["ErrorMessage"] = message;
         }
-        await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Approved);
+        else
+        {
+            TempData["SuccessMessage"] = message;
+        }
 
-        TempData["SuccessMessage"] = "Opportunity approved and published successfully!";
         return RedirectToAction(nameof(PendingApprovals));
     }
 
@@ -192,37 +320,41 @@ public class OpportunitiesController : Controller
     [Authorize(Roles = "Hod,Admin")]
     public async Task<IActionResult> Reject(Guid id)
     {
-        
-        var opp = await _opportunityRepository.GetByIdAsync(id);
-        if (opp == null) return NotFound();
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Challenge();
 
-        // SECURITY FIX (V010): Prevent redundant rejection of already rejected opportunities
-        if (opp.ApprovalStatus == ApprovalStatus.Rejected)
+        bool isAdmin = User.IsInRole("Admin");
+        bool isHod = User.IsInRole("Hod");
+        int? deptId = null;
+
+        if (isHod && !isAdmin)
         {
-            TempData["ErrorMessage"] = "Opportunity is already rejected.";
-            return RedirectToAction(nameof(PendingApprovals));
+            var facProfile = await _facultyProfileRepository.GetByUserIdAsync(user.Id);
+            if (facProfile != null) deptId = facProfile.DepartmentId;
         }
 
-        if (User.IsInRole(UserRole.Hod.ToString()) && !User.IsInRole(UserRole.Admin.ToString())) {
-            var user = await _userManager.GetUserAsync(User);
-            var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
-            var facProfile = facRepo != null ? await facRepo.GetByUserIdAsync(user.Id) : null;
-            if (facProfile == null || opp?.TargetDepartmentId == null || opp.TargetDepartmentId != facProfile.DepartmentId) return Forbid();
+        var (success, message) = await _opportunityService.RejectOpportunityAsync(id, user.Id, isAdmin, isHod, deptId);
+        if (!success)
+        {
+            if (message.StartsWith("Forbidden")) return Forbid();
+            TempData["ErrorMessage"] = message;
         }
-        await _opportunityRepository.UpdateStatusAsync(id, ApprovalStatus.Rejected);
+        else
+        {
+            TempData["SuccessMessage"] = message;
+        }
 
-        TempData["SuccessMessage"] = "Opportunity has been rejected.";
         return RedirectToAction(nameof(PendingApprovals));
     }
 
-    // GET: /Opportunities/Calendar (Visual Calendar View)
+    // GET: /Opportunities/Calendar
     public async Task<IActionResult> Calendar()
     {
         var events = await _calendarFeed.GetCalendarEventsAsync();
         return View(events);
     }
 
-    // GET: /Opportunities/CalendarFeed (JSON feed for Week 6 integration)
+    // GET: /Opportunities/CalendarFeed
     [HttpGet]
     public async Task<IActionResult> CalendarFeed(DateTime? start, DateTime? end)
     {

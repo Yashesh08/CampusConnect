@@ -3,7 +3,7 @@ namespace CampusConnect.Models.Enums;
 public enum UserRole { Student, Faculty, ClubCoordinator, EventOrganizer, Hod, Admin }
 public enum UserStatus { Active, Suspended, PendingVerification }
 public enum ProficiencyLevel { Beginner, Intermediate, Advanced }
-public enum OpportunityCategory { Internship, Job, Hackathon, Workshop, Seminar, CulturalEvent }
+public enum OpportunityCategory { Internship, Job, Hackathon, Workshop, Seminar, CulturalEvent, ResearchAndDevelopment, HardwareProject, DesignAndMedia, LabAssistance, EventManagement }
 public enum WorkMode { Remote, Onsite, Hybrid }
 public enum ApprovalStatus { PendingReview, Approved, Rejected }
 public enum ApplicationStatus { Registered, Applied, UnderReview, Shortlisted, Selected, Rejected }

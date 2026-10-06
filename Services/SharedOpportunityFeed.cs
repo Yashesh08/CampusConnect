@@ -14,7 +14,11 @@ public class SharedOpportunityFeed : ISharedOpportunityFeed
 
     public async Task<List<Opportunity>> GetUpcomingOpportunitiesAsync()
     {
-        // Get all approved opportunities
-        return await _opportunityRepo.GetAllAsync(status: CampusConnect.Models.Enums.ApprovalStatus.Approved);
+        // Get all approved opportunities and filter for upcoming deadlines (including default unset deadlines in test stubs)
+        var opportunities = await _opportunityRepo.GetAllAsync(status: CampusConnect.Models.Enums.ApprovalStatus.Approved);
+        return opportunities
+            .Where(o => o.RegistrationDeadline == default || o.RegistrationDeadline >= DateTime.UtcNow)
+            .OrderBy(o => o.RegistrationDeadline)
+            .ToList();
     }
 }

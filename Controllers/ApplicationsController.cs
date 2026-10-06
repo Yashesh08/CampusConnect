@@ -1,29 +1,26 @@
 using CampusConnect.Models;
 using CampusConnect.Models.Enums;
 using CampusConnect.Repositories;
+using CampusConnect.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-using Microsoft.AspNetCore.Authorization;
 
 namespace CampusConnect.Controllers;
 
 [Authorize(Roles = "Student")]
 public class ApplicationsController : Controller
 {
-    private readonly IApplicationRepository _applicationRepository;
-    private readonly IOpportunityRepository _opportunityRepository;
+    private readonly IApplicationService _applicationService;
     private readonly IStudentProfileRepository _studentProfileRepository;
     private readonly UserManager<User> _userManager;
 
     public ApplicationsController(
-        IApplicationRepository applicationRepository,
-        IOpportunityRepository opportunityRepository,
+        IApplicationService applicationService,
         IStudentProfileRepository studentProfileRepository,
         UserManager<User> userManager)
     {
-        _applicationRepository = applicationRepository;
-        _opportunityRepository = opportunityRepository;
+        _applicationService = applicationService;
         _studentProfileRepository = studentProfileRepository;
         _userManager = userManager;
     }
@@ -33,58 +30,24 @@ public class ApplicationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Apply(Guid opportunityId)
     {
-        var opportunity = await _opportunityRepository.GetByIdAsync(opportunityId);
-        if (opportunity == null)
-        {
-            return NotFound("Opportunity not found.");
-        }
-
-        // SECURITY FIX (V017): Cannot apply to unapproved or rejected opportunities
-        if (opportunity.ApprovalStatus != ApprovalStatus.Approved)
-        {
-            TempData["ErrorMessage"] = "Applications are only accepted for approved opportunities.";
-            return RedirectToAction("Index", "Opportunities");
-        }
-
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
         var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
-
-        // SECURITY FIX (V002): Do NOT fall back to another student's profile
         if (studentProfile == null)
         {
             TempData["ErrorMessage"] = "You must create a student profile before applying.";
             return RedirectToAction("Create", "StudentProfiles");
         }
 
-        // Check if deadline has passed
-        if (opportunity.RegistrationDeadline < DateTime.UtcNow)
+        var (success, message, _) = await _applicationService.ApplyAsync(opportunityId, studentProfile.ProfileId);
+        if (!success)
         {
-            TempData["ErrorMessage"] = "Registration deadline for this opportunity has already passed.";
+            TempData["ErrorMessage"] = message;
             return RedirectToAction("Details", "Opportunities", new { id = opportunityId });
         }
 
-        // Duplicate check
-        bool alreadyApplied = await _applicationRepository.HasAlreadyAppliedAsync(opportunityId, studentProfile.ProfileId);
-        if (alreadyApplied)
-        {
-            TempData["ErrorMessage"] = "You have already applied for this opportunity.";
-            return RedirectToAction("Details", "Opportunities", new { id = opportunityId });
-        }
-
-        var application = new Application
-        {
-            ApplicationId = Guid.NewGuid(),
-            OpportunityId = opportunityId,
-            StudentId = studentProfile.ProfileId,
-            Status = ApplicationStatus.Applied,
-            AppliedAt = DateTime.UtcNow
-        };
-
-        await _applicationRepository.AddAsync(application);
-
-        TempData["SuccessMessage"] = "Application submitted successfully!";
+        TempData["SuccessMessage"] = message;
         return RedirectToAction(nameof(MyApplications));
     }
 
@@ -95,20 +58,13 @@ public class ApplicationsController : Controller
         if (user == null) return Challenge();
 
         var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
-
-        // SECURITY FIX (V003): Do NOT fall back to another student's profile
         if (studentProfile == null)
         {
             ViewBag.CurrentStatusFilter = status;
             return View(new List<Application>());
         }
 
-        var applications = await _applicationRepository.GetByStudentIdAsync(studentProfile.ProfileId);
-        if (status.HasValue)
-        {
-            applications = applications.Where(a => a.Status == status.Value).ToList();
-        }
-
+        var applications = await _applicationService.GetStudentApplicationsAsync(studentProfile.ProfileId, status);
         ViewBag.CurrentStatusFilter = status;
         return View(applications);
     }
@@ -118,16 +74,23 @@ public class ApplicationsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Withdraw(Guid id)
     {
-        
         var user = await _userManager.GetUserAsync(User);
-        var studentProfile = user != null ? await _studentProfileRepository.GetByUserIdAsync(user.Id) : null;
-        if (studentProfile == null) return Forbid();
-        var application = await _applicationRepository.GetByIdAsync(id);
-        if (application == null) return NotFound();
-        if (application.StudentId != studentProfile.ProfileId) return Forbid();
-        await _applicationRepository.DeleteAsync(id);
+        if (user == null) return Challenge();
 
-        TempData["SuccessMessage"] = "Application withdrawn successfully.";
+        var studentProfile = await _studentProfileRepository.GetByUserIdAsync(user.Id);
+        if (studentProfile == null) return Forbid();
+
+        var (success, message) = await _applicationService.WithdrawAsync(id, studentProfile.ProfileId);
+        if (!success)
+        {
+            if (message.StartsWith("Forbidden")) return Forbid();
+            TempData["ErrorMessage"] = message;
+        }
+        else
+        {
+            TempData["SuccessMessage"] = message;
+        }
+
         return RedirectToAction(nameof(MyApplications));
     }
 }

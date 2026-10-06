@@ -10,8 +10,15 @@
         <p class="text-muted mb-0">Browse events, research projects, internships, and hackathons.</p>
     </div>
     <div class="d-flex gap-2">
+        @if (User.IsInRole("Student"))
+        {
+            <a asp-action="Saved" class="btn btn-outline-warning shadow-sm">⭐ Saved Bookmarks</a>
+        }
         <a asp-action="Calendar" class="btn btn-outline-info shadow-sm">📅 Deadlines Calendar</a>
-        <a asp-action="Create" class="btn btn-primary shadow-sm">+ Post Opportunity</a>
+        @if (User.IsInRole("Faculty") || User.IsInRole("ClubCoordinator") || User.IsInRole("EventOrganizer") || User.IsInRole("Hod") || User.IsInRole("Admin"))
+        {
+            <a asp-action="Create" class="btn btn-primary shadow-sm">+ Post Opportunity</a>
+        }
     </div>
 </div>
 
@@ -34,10 +41,10 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3">
         <form method="get" asp-action="Index" class="row g-3 align-items-center">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <input type="text" name="search" value="@Model.SearchQuery" class="form-control" placeholder="Search by title, keyword..." />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="category" class="form-select">
                     <option value="">All Categories</option>
                     @foreach (var cat in Enum.GetValues<CampusConnect.Models.Enums.OpportunityCategory>())
@@ -55,8 +62,17 @@
                     }
                 </select>
             </div>
+            <div class="col-md-2">
+                <select name="sortBy" class="form-select">
+                    <option value="deadline_asc" selected="@(Model.SortBy == "deadline_asc" || string.IsNullOrEmpty(Model.SortBy))">Deadline: Soonest</option>
+                    <option value="deadline_desc" selected="@(Model.SortBy == "deadline_desc")">Deadline: Latest</option>
+                    <option value="title_asc" selected="@(Model.SortBy == "title_asc")">Title: A-Z</option>
+                    <option value="title_desc" selected="@(Model.SortBy == "title_desc")">Title: Z-A</option>
+                    <option value="newest" selected="@(Model.SortBy == "newest")">Recently Added</option>
+                </select>
+            </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <button type="submit" class="btn btn-primary w-100">Filter & Sort</button>
                 <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
@@ -72,20 +88,47 @@
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
         @foreach (var opp in Model.Opportunities)
         {
+            bool isSaved = Model.SavedOpportunityIds.Contains(opp.OpportunityId);
             <div class="col">
-                <div class="card h-100 border-0 shadow-sm hover-shadow transition">
+                <div class="card h-100 border-0 shadow-sm hover-shadow transition position-relative">
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">@opp.Category</span>
-                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">@opp.WorkMode</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">@opp.WorkMode</span>
+                                @if (User.IsInRole("Student"))
+                                {
+                                    if (isSaved)
+                                    {
+                                        <form method="post" asp-action="Unsave" asp-route-id="@opp.OpportunityId" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-link p-0 text-warning text-decoration-none" title="Remove Bookmark">⭐</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-action="Save" asp-route-id="@opp.OpportunityId" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-link p-0 text-muted text-decoration-none" title="Save Bookmark">☆</button>
+                                        </form>
+                                    }
+                                }
+                            </div>
                         </div>
                         <h5 class="card-title fw-bold text-dark mb-2">@opp.Title</h5>
                         <p class="card-text text-muted small flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                             @opp.Description
                         </p>
+
+                        @if (opp.Capacity.HasValue)
+                        {
+                            <div class="mb-2">
+                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Capacity: @opp.Capacity</span>
+                            </div>
+                        }
 
                         @if (opp.RequiredSkills != null && opp.RequiredSkills.Any())
                         {
@@ -113,4 +156,43 @@ else
             </div>
         }
     </div>
+
+    <!-- Pagination Controls -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Opportunities pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-search="@Model.SearchQuery"
+                       asp-route-category="@Model.Category"
+                       asp-route-mode="@Model.WorkMode"
+                       asp-route-departmentId="@Model.DepartmentId"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-page="@(Model.Page - 1)">Previous</a>
+                </li>
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-search="@Model.SearchQuery"
+                           asp-route-category="@Model.Category"
+                           asp-route-mode="@Model.WorkMode"
+                           asp-route-departmentId="@Model.DepartmentId"
+                           asp-route-sortBy="@Model.SortBy"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-search="@Model.SearchQuery"
+                       asp-route-category="@Model.Category"
+                       asp-route-mode="@Model.WorkMode"
+                       asp-route-departmentId="@Model.DepartmentId"
+                       asp-route-sortBy="@Model.SortBy"
+                       asp-route-page="@(Model.Page + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
 }
