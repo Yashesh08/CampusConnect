@@ -17,6 +17,39 @@ public static class DbInitializer
         // Ensure database is created and migrated
         await dbContext.Database.MigrateAsync();
 
+        // Ensure tables for announcements, connections, and messages exist in SQLite
+        await dbContext.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS ""announcements"" (
+                ""announcement_id"" TEXT NOT NULL CONSTRAINT ""PK_announcements"" PRIMARY KEY,
+                ""author_user_id"" TEXT NOT NULL,
+                ""department_id"" INTEGER NULL,
+                ""Title"" TEXT NOT NULL,
+                ""Content"" TEXT NOT NULL,
+                ""created_at"" TEXT NOT NULL,
+                CONSTRAINT ""FK_announcements_AspNetUsers_author_user_id"" FOREIGN KEY (""author_user_id"") REFERENCES ""AspNetUsers"" (""Id"") ON DELETE CASCADE,
+                CONSTRAINT ""FK_announcements_departments_department_id"" FOREIGN KEY (""department_id"") REFERENCES ""departments"" (""department_id"") ON DELETE SET NULL
+            );
+            CREATE TABLE IF NOT EXISTS ""connections"" (
+                ""connection_id"" TEXT NOT NULL CONSTRAINT ""PK_connections"" PRIMARY KEY,
+                ""sender_user_id"" TEXT NOT NULL,
+                ""receiver_user_id"" TEXT NOT NULL,
+                ""Status"" INTEGER NOT NULL,
+                ""created_at"" TEXT NOT NULL,
+                CONSTRAINT ""FK_connections_AspNetUsers_sender_user_id"" FOREIGN KEY (""sender_user_id"") REFERENCES ""AspNetUsers"" (""Id"") ON DELETE CASCADE,
+                CONSTRAINT ""FK_connections_AspNetUsers_receiver_user_id"" FOREIGN KEY (""receiver_user_id"") REFERENCES ""AspNetUsers"" (""Id"") ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS ""messages"" (
+                ""message_id"" TEXT NOT NULL CONSTRAINT ""PK_messages"" PRIMARY KEY,
+                ""sender_user_id"" TEXT NOT NULL,
+                ""receiver_user_id"" TEXT NOT NULL,
+                ""Content"" TEXT NOT NULL,
+                ""is_read"" INTEGER NOT NULL,
+                ""sent_at"" TEXT NOT NULL,
+                CONSTRAINT ""FK_messages_AspNetUsers_sender_user_id"" FOREIGN KEY (""sender_user_id"") REFERENCES ""AspNetUsers"" (""Id"") ON DELETE CASCADE,
+                CONSTRAINT ""FK_messages_AspNetUsers_receiver_user_id"" FOREIGN KEY (""receiver_user_id"") REFERENCES ""AspNetUsers"" (""Id"") ON DELETE CASCADE
+            );
+        ");
+
         // 1. Seed Roles
         string[] roles = Enum.GetNames<UserRole>();
         foreach (var roleName in roles)
@@ -331,6 +364,83 @@ public static class DbInitializer
             };
 
             await dbContext.GrievanceLogs.AddAsync(log1);
+            await dbContext.SaveChangesAsync();
+        }
+
+        // 7. Seed Announcements
+        if (!await dbContext.Announcements.AnyAsync() && hodUser != null && faculty1 != null && cseDept != null)
+        {
+            var announcements = new List<Announcement>
+            {
+                new Announcement
+                {
+                    AnnouncementId = Guid.NewGuid(),
+                    AuthorUserId = hodUser.Id,
+                    DepartmentId = null, // College-wide!
+                    Title = "Annual Campus Innovation & Hackathon 2026 Announced",
+                    Content = "We are thrilled to announce the CampusConnect Annual Hackathon 2026. Teams from all academic departments are invited to register. Cash prizes and internship fast-tracks will be awarded to top finishers.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2)
+                },
+                new Announcement
+                {
+                    AnnouncementId = Guid.NewGuid(),
+                    AuthorUserId = faculty1.Id,
+                    DepartmentId = cseDept.DepartmentId, // CSE Department specific
+                    Title = "CSE Mid-Term Project Submissions & Code Reviews",
+                    Content = "All CSE 3rd and 4th year students must submit their project repositories by next Friday. Ensure your README and deployment instructions are up to date.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                }
+            };
+            await dbContext.Announcements.AddRangeAsync(announcements);
+            await dbContext.SaveChangesAsync();
+        }
+
+        // 8. Seed Connections & Messages
+        if (!await dbContext.Connections.AnyAsync() && student1 != null && student2 != null && faculty1 != null)
+        {
+            var conn1 = new Connection
+            {
+                ConnectionId = Guid.NewGuid(),
+                SenderUserId = student1.Id,
+                ReceiverUserId = student2.Id,
+                Status = ConnectionStatus.Accepted,
+                CreatedAt = DateTime.UtcNow.AddDays(-3)
+            };
+
+            var conn2 = new Connection
+            {
+                ConnectionId = Guid.NewGuid(),
+                SenderUserId = student1.Id,
+                ReceiverUserId = faculty1.Id,
+                Status = ConnectionStatus.Pending,
+                CreatedAt = DateTime.UtcNow.AddDays(-1)
+            };
+
+            await dbContext.Connections.AddRangeAsync(conn1, conn2);
+
+            var messages = new List<Message>
+            {
+                new Message
+                {
+                    MessageId = Guid.NewGuid(),
+                    SenderUserId = student1.Id,
+                    ReceiverUserId = student2.Id,
+                    Content = "Hey Bob! Are you participating in the upcoming Campus Hackathon?",
+                    IsRead = true,
+                    SentAt = DateTime.UtcNow.AddDays(-2).AddHours(1)
+                },
+                new Message
+                {
+                    MessageId = Guid.NewGuid(),
+                    SenderUserId = student2.Id,
+                    ReceiverUserId = student1.Id,
+                    Content = "Hey Alice! Yes, absolutely. Let's form a team. I can cover backend API development.",
+                    IsRead = false,
+                    SentAt = DateTime.UtcNow.AddDays(-2).AddHours(2)
+                }
+            };
+
+            await dbContext.Messages.AddRangeAsync(messages);
             await dbContext.SaveChangesAsync();
         }
         } // End of Development-only seeding

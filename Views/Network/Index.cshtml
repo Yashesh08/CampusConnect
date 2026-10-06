@@ -1,0 +1,216 @@
+@model CampusConnect.Models.ViewModels.NetworkViewModel
+@using CampusConnect.Models.Enums
+
+@{
+    ViewData["Title"] = "My Network";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="fw-bold mb-1">
+            <i class="fa-solid fa-user-group text-primary me-2"></i> My Network
+        </h1>
+        <p class="text-muted mb-0">Manage your campus connections, accept incoming requests, and message your peers.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Directory" asp-action="Index" class="btn btn-primary rounded-3 shadow-sm">
+            <i class="fa-solid fa-magnifying-glass me-1"></i> Find People in Directory
+        </a>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-pills mb-4 gap-2" id="networkTabs" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active rounded-pill px-4" id="connections-tab" data-bs-toggle="pill" data-bs-target="#connections" type="button" role="tab">
+            <i class="fa-solid fa-users me-1"></i> Connections (@Model.TotalConnections)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link rounded-pill px-4 @(Model.PendingReceivedCount > 0 ? "bg-warning text-dark shadow-sm" : "")" id="received-tab" data-bs-toggle="pill" data-bs-target="#received" type="button" role="tab">
+            <i class="fa-solid fa-inbox me-1"></i> Received Requests
+            @if (Model.PendingReceivedCount > 0)
+            {
+                <span class="badge bg-danger rounded-pill ms-1">@Model.PendingReceivedCount</span>
+            }
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link rounded-pill px-4" id="sent-tab" data-bs-toggle="pill" data-bs-target="#sent" type="button" role="tab">
+            <i class="fa-solid fa-paper-plane me-1"></i> Sent Requests (@Model.PendingSentCount)
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="networkTabsContent">
+    <!-- TAB 1: ACCEPTED CONNECTIONS -->
+    <div class="tab-pane fade show active" id="connections" role="tabpanel">
+        @if (!Model.AcceptedConnections.Any())
+        {
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+                <div class="card-body">
+                    <i class="fa-solid fa-user-friends fa-3x text-muted mb-3 opacity-50"></i>
+                    <h5 class="fw-bold">No Connections Yet</h5>
+                    <p class="text-muted small mb-3">Expand your campus network by browsing the directory and sending connection requests.</p>
+                    <a asp-controller="Directory" asp-action="Index" class="btn btn-primary rounded-3 px-4">Browse Directory</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var c in Model.AcceptedConnections)
+                {
+                    bool isSender = c.SenderUserId.ToString() == currentUserId;
+                    var other = isSender ? c.ReceiverUser : c.SenderUser;
+                    bool isStudent = other.Role == UserRole.Student;
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 p-3">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                     style="width: 48px; height: 48px; background: @(isStudent ? "linear-gradient(135deg, #3b82f6, #6366f1)" : "linear-gradient(135deg, #10b981, #059669)");">
+                                    @(other.Email.Length > 0 ? other.Email[0].ToString().ToUpper() : "U")
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="fw-bold mb-0 text-truncate text-dark" title="@other.Email">
+                                        @other.Email
+                                    </h6>
+                                    <span class="badge @(isStudent ? "bg-primary" : "bg-success") rounded-pill small">
+                                        @other.Role
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <a asp-controller="Directory" asp-action="Profile" asp-route-id="@other.Id" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none">
+                                    View Profile
+                                </a>
+                                <div class="d-flex gap-1">
+                                    <a asp-controller="Messages" asp-action="Index" asp-route-userId="@other.Id"
+                                       class="btn btn-primary btn-sm rounded-3">
+                                        <i class="fa-solid fa-comment me-1"></i> Message
+                                    </a>
+                                    <form asp-action="Remove" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="connectionId" value="@c.ConnectionId" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-3" title="Remove Connection"
+                                                onclick="return confirm('Remove connection?');">
+                                            <i class="fa-solid fa-user-minus"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- TAB 2: RECEIVED REQUESTS -->
+    <div class="tab-pane fade" id="received" role="tabpanel">
+        @if (!Model.ReceivedRequests.Any())
+        {
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+                <div class="card-body">
+                    <i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-50"></i>
+                    <h5 class="fw-bold">No Pending Requests</h5>
+                    <p class="text-muted small mb-0">You don't have any incoming connection requests right now.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var r in Model.ReceivedRequests)
+                {
+                    var sender = r.SenderUser;
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 border-start border-4 border-warning">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                     style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    @(sender.Email.Length > 0 ? sender.Email[0].ToString().ToUpper() : "U")
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-truncate text-dark" style="max-width: 170px;">@sender.Email</h6>
+                                    <span class="badge bg-secondary rounded-pill">@sender.Role</span>
+                                </div>
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <i class="fa-regular fa-clock me-1"></i> Requested @r.CreatedAt.ToString("MMM dd, yyyy")
+                            </div>
+                            <div class="d-flex gap-2">
+                                <form asp-action="Accept" method="post" class="flex-fill">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="connectionId" value="@r.ConnectionId" />
+                                    <button type="submit" class="btn btn-success btn-sm w-100 rounded-3">
+                                        <i class="fa-solid fa-check me-1"></i> Accept
+                                    </button>
+                                </form>
+                                <form asp-action="Decline" method="post" class="flex-fill">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="connectionId" value="@r.ConnectionId" />
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100 rounded-3">
+                                        Decline
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- TAB 3: SENT REQUESTS -->
+    <div class="tab-pane fade" id="sent" role="tabpanel">
+        @if (!Model.SentRequests.Any())
+        {
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+                <div class="card-body">
+                    <i class="fa-solid fa-paper-plane fa-3x text-muted mb-3 opacity-50"></i>
+                    <h5 class="fw-bold">No Sent Requests Pending</h5>
+                    <p class="text-muted small mb-0">All your sent requests have been accepted or answered.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var s in Model.SentRequests)
+                {
+                    var receiver = s.ReceiverUser;
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold bg-secondary"
+                                     style="width: 48px; height: 48px;">
+                                    @(receiver.Email.Length > 0 ? receiver.Email[0].ToString().ToUpper() : "U")
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-truncate text-dark" style="max-width: 170px;">@receiver.Email</h6>
+                                    <span class="badge bg-light text-dark border rounded-pill">Pending Approval</span>
+                                </div>
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <i class="fa-regular fa-clock me-1"></i> Sent @s.CreatedAt.ToString("MMM dd, yyyy")
+                            </div>
+                            <form asp-action="Remove" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="connectionId" value="@s.ConnectionId" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100 rounded-3">
+                                    <i class="fa-solid fa-xmark me-1"></i> Cancel Request
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

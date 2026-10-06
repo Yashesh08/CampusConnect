@@ -1,0 +1,174 @@
+@model CampusConnect.Models.ViewModels.MessagesIndexViewModel
+@using CampusConnect.Models.Enums
+
+@{
+    ViewData["Title"] = "Direct Messages";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold mb-1">
+            <i class="fa-solid fa-comments text-primary me-2"></i> Messages
+        </h1>
+        <p class="text-muted mb-0">Direct 1-on-1 conversations with peers and faculty members.</p>
+    </div>
+    <a asp-controller="Directory" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-3">
+        <i class="fa-solid fa-user-plus me-1"></i> Start New Conversation
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="min-height: 600px;">
+    <div class="row g-0">
+        <!-- ─── LEFT: Conversations List ─── -->
+        <div class="col-md-5 col-lg-4 border-end bg-white" style="height: 600px; display: flex; flex-direction: column;">
+            <div class="p-3 border-bottom bg-light">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="fa-solid fa-inbox text-primary me-2"></i> Recent Chats
+                </h6>
+            </div>
+
+            <div class="flex-grow-1 overflow-auto">
+                @if (!Model.Conversations.Any())
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="fa-solid fa-comment-dots fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-2">No active conversations yet.</p>
+                        <a asp-controller="Directory" asp-action="Index" class="btn btn-primary btn-sm rounded-3">Find People</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var conv in Model.Conversations)
+                        {
+                            bool isActive = Model.ActiveChatUser != null && Model.ActiveChatUser.Id == conv.OtherUser.Id;
+                            bool isStudent = conv.OtherUser.Role == UserRole.Student;
+
+                            <a asp-action="Index" asp-route-userId="@conv.OtherUser.Id"
+                               class="list-group-item list-group-item-action p-3 border-bottom @(isActive ? "bg-primary bg-opacity-10 border-start border-4 border-primary" : "")">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm flex-shrink-0"
+                                         style="width: 44px; height: 44px; background: @(isStudent ? "linear-gradient(135deg, #3b82f6, #6366f1)" : "linear-gradient(135deg, #10b981, #059669)");">
+                                        @(conv.OtherUser.Email.Length > 0 ? conv.OtherUser.Email[0].ToString().ToUpper() : "U")
+                                    </div>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-truncate text-dark small" style="max-width: 140px;">
+                                                @conv.OtherUser.Email
+                                            </span>
+                                            <small class="text-muted" style="font-size: 0.72rem;">
+                                                @conv.LastMessage.SentAt.ToString("MMM dd")
+                                            </small>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted small text-truncate" style="max-width: 160px; font-size: 0.8rem;">
+                                                @(conv.LastMessage.SenderUserId.ToString() == currentUserId ? "You: " : "")@conv.LastMessage.Content
+                                            </span>
+                                            @if (conv.UnreadCount > 0)
+                                            {
+                                                <span class="badge bg-danger rounded-pill">@conv.UnreadCount</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ─── RIGHT: Active Chat Thread ─── -->
+        <div class="col-md-7 col-lg-8 d-flex flex-column bg-light" style="height: 600px;">
+            @if (Model.ActiveChatUser == null)
+            {
+                <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center p-4">
+                    <i class="fa-solid fa-comments fa-3x text-muted mb-3 opacity-50"></i>
+                    <h5 class="fw-bold text-dark">Select a Conversation</h5>
+                    <p class="text-muted small mb-3">Choose a peer from the list on the left or search the directory to start a new chat.</p>
+                    <a asp-controller="Directory" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-3">
+                        <i class="fa-solid fa-address-book me-1"></i> Browse Directory
+                    </a>
+                </div>
+            }
+            else
+            {
+                <!-- Chat Header -->
+                <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                             style="width: 40px; height: 40px; background: @(Model.ActiveChatUser.Role == UserRole.Student ? "linear-gradient(135deg, #3b82f6, #6366f1)" : "linear-gradient(135deg, #10b981, #059669)");">
+                            @(Model.ActiveChatUser.Email.Length > 0 ? Model.ActiveChatUser.Email[0].ToString().ToUpper() : "U")
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-dark">@Model.ActiveChatUser.Email</h6>
+                            <span class="badge @(Model.ActiveChatUser.Role == UserRole.Student ? "bg-primary" : "bg-success") rounded-pill" style="font-size: 0.7rem;">
+                                @Model.ActiveChatUser.Role
+                            </span>
+                        </div>
+                    </div>
+                    <a asp-controller="Directory" asp-action="Profile" asp-route-id="@Model.ActiveChatUser.Id"
+                       class="btn btn-outline-secondary btn-sm rounded-3">
+                        <i class="fa-solid fa-user me-1"></i> View Profile
+                    </a>
+                </div>
+
+                <!-- Chat Message Stream -->
+                <div class="flex-grow-1 p-4 overflow-auto d-flex flex-column gap-3" id="messageStream">
+                    @if (!Model.ActiveChatMessages.Any())
+                    {
+                        <div class="text-center my-auto text-muted">
+                            <i class="fa-solid fa-paper-plane fa-2x mb-2 text-secondary opacity-50"></i>
+                            <p class="small mb-0">No messages yet. Say hello to @Model.ActiveChatUser.Email!</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var msg in Model.ActiveChatMessages)
+                        {
+                            bool isMine = msg.SenderUserId.ToString() == currentUserId;
+
+                            <div class="d-flex @(isMine ? "justify-content-end" : "justify-content-start")">
+                                <div class="message-bubble p-3 rounded-4 shadow-sm @(isMine ? "bg-primary text-white" : "bg-white text-dark border")"
+                                     style="max-width: 75%;">
+                                    <div class="lh-base" style="white-space: pre-wrap; font-size: 0.95rem;">@msg.Content</div>
+                                    <div class="d-flex justify-content-end align-items-center gap-1 mt-1 @(isMine ? "text-white-50" : "text-muted")" style="font-size: 0.7rem;">
+                                        <span>@msg.SentAt.ToString("hh:mm tt")</span>
+                                        @if (isMine)
+                                        {
+                                            <i class="fa-solid @(msg.IsRead ? "fa-check-double text-info" : "fa-check")"></i>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Chat Compose Bar -->
+                <div class="p-3 bg-white border-top">
+                    <form asp-action="Send" method="post" class="d-flex gap-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="receiverId" value="@Model.ActiveChatUser.Id" />
+                        <input type="text" name="content" class="form-control rounded-3"
+                               placeholder="Type a message to @Model.ActiveChatUser.Email…" required autocomplete="off" />
+                        <button type="submit" class="btn btn-primary px-4 rounded-3">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Send
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var stream = document.getElementById("messageStream");
+        if (stream) {
+            stream.scrollTop = stream.scrollHeight;
+        }
+    });
+</script>

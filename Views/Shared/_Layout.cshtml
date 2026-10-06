@@ -80,6 +80,46 @@
                                 }
                             </ul>
                         </li>
+
+                        <!-- Directory -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Directory" asp-action="Index">
+                                <i class="fa-solid fa-address-book me-1"></i> Directory
+                            </a>
+                        </li>
+
+                        <!-- Community & Networking -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-user-group me-1"></i> Network
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-3">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Network" asp-action="Index">
+                                        <i class="fa-solid fa-users text-primary me-2"></i> My Connections
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Messages" asp-action="Index">
+                                        <i class="fa-solid fa-comments text-info me-2"></i> Direct Messages
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Office Hours -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="OfficeHours" asp-action="Index">
+                                <i class="fa-solid fa-calendar-check me-1"></i> Office Hours
+                            </a>
+                        </li>
+
+                        <!-- Announcements -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Announcements" asp-action="Index">
+                                <i class="fa-solid fa-bullhorn me-1"></i> Notices
+                            </a>
+                        </li>
                     }
                     @if (User.IsInRole("Student"))
                     {

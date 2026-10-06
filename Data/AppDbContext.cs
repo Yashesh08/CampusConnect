@@ -20,6 +20,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<GrievanceLog> GrievanceLogs => Set<GrievanceLog>();
     public DbSet<Opportunity> Opportunities => Set<Opportunity>();
     public DbSet<Application> Applications => Set<Application>();
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<Connection> Connections => Set<Connection>();
+    public DbSet<Message> Messages => Set<Message>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -144,6 +147,45 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .HasOne(a => a.Student)
             .WithMany()
             .HasForeignKey(a => a.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Announcement relationships
+        modelBuilder.Entity<Announcement>()
+            .HasOne(a => a.AuthorUser)
+            .WithMany()
+            .HasForeignKey(a => a.AuthorUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Announcement>()
+            .HasOne(a => a.Department)
+            .WithMany()
+            .HasForeignKey(a => a.DepartmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Connection relationships
+        modelBuilder.Entity<Connection>()
+            .HasOne(c => c.SenderUser)
+            .WithMany()
+            .HasForeignKey(c => c.SenderUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Connection>()
+            .HasOne(c => c.ReceiverUser)
+            .WithMany()
+            .HasForeignKey(c => c.ReceiverUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Message relationships
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.SenderUser)
+            .WithMany()
+            .HasForeignKey(m => m.SenderUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.ReceiverUser)
+            .WithMany()
+            .HasForeignKey(m => m.ReceiverUserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

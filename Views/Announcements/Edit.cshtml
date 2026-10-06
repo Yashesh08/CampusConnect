@@ -1,0 +1,74 @@
+@model CampusConnect.Models.ViewModels.CreateAnnouncementViewModel
+
+@{
+    ViewData["Title"] = "Edit Announcement";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm rounded-3">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Announcements
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Announcement
+            </h2>
+            <p class="text-muted mb-4">Modify the title, scope, or content of this notice.</p>
+
+            <form asp-action="Edit" asp-route-id="@ViewBag.AnnouncementId" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold">Announcement Title <span class="text-danger">*</span></label>
+                    <input asp-for="Title" class="form-control rounded-3" required />
+                </div>
+
+                <div class="mb-4 p-3 bg-light rounded-4 border">
+                    <label class="form-label fw-semibold mb-2">Scope</label>
+                    <div class="d-flex gap-4 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" asp-for="IsCollegeWide" id="scopeCollege" value="true" onchange="toggleDeptSelect()" />
+                            <label class="form-check-label fw-semibold" for="scopeCollege">
+                                <i class="fa-solid fa-building-columns text-info me-1"></i> College-Wide Notice
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" asp-for="IsCollegeWide" id="scopeDept" value="false" onchange="toggleDeptSelect()" />
+                            <label class="form-check-label fw-semibold" for="scopeDept">
+                                <i class="fa-solid fa-graduation-cap text-primary me-1"></i> Department Specific
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="deptSelectGroup" style="display: none;">
+                        <label class="form-label small fw-semibold">Target Department</label>
+                        <select asp-for="DepartmentId" class="form-select rounded-3" asp-items="ViewBag.Departments">
+                            <option value="">-- Choose Department --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Content" class="form-label fw-semibold">Content <span class="text-danger">*</span></label>
+                    <textarea asp-for="Content" class="form-control rounded-3" rows="6" required></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-3 px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary rounded-3 px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDeptSelect() {
+        var isDept = document.getElementById("scopeDept").checked;
+        document.getElementById("deptSelectGroup").style.display = isDept ? "block" : "none";
+    }
+    document.addEventListener("DOMContentLoaded", toggleDeptSelect);
+</script>

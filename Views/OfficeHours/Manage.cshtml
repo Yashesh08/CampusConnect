@@ -1,0 +1,190 @@
+@model CampusConnect.Models.ViewModels.ManageOfficeHoursViewModel
+
+@{
+    ViewData["Title"] = "Manage Office Hours";
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="fw-bold mb-1">
+            <i class="fa-solid fa-calendar-plus text-primary me-2"></i> Manage Office Hours
+        </h1>
+        <p class="text-muted mb-0">Create open consultation slots, review booked student appointments, and manage your schedule.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary rounded-3">
+        <i class="fa-solid fa-eye me-1"></i> Student View
+    </a>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- ─── LEFT: Schedule New Slot ─── -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 20px;">
+            <h5 class="fw-bold mb-3 text-dark">
+                <i class="fa-solid fa-plus-circle text-primary me-2"></i> Add Office Hour Slot
+            </h5>
+
+            <form asp-action="CreateSlot" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Consultation Date</label>
+                    <input asp-for="NewSlot.Date" class="form-control rounded-3" type="date"
+                           min="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Start Time</label>
+                        <input asp-for="NewSlot.StartTime" class="form-control rounded-3" type="time" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">End Time</label>
+                        <input asp-for="NewSlot.EndTime" class="form-control rounded-3" type="time" required />
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 rounded-3 p-2 small mb-3">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    Double-booking protection automatically prevents overlapping slots.
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-semibold">
+                    <i class="fa-solid fa-calendar-check me-1"></i> Publish Slot
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ─── RIGHT: Active & Past Slots ─── -->
+    <div class="col-lg-8">
+        <!-- Upcoming Slots -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fa-solid fa-clock text-primary me-2"></i> Scheduled Consultations (@Model.UpcomingSlots.Count)
+                    </h5>
+                    <span class="badge bg-light text-muted border">Upcoming</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                @if (!Model.UpcomingSlots.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-regular fa-calendar-xmark fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">No upcoming office hours slots published. Add one using the form on the left.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var slot in Model.UpcomingSlots)
+                        {
+                            <div class="card border-0 bg-light rounded-4 p-3 border-start border-4 @(slot.IsBooked ? "border-primary" : "border-success")">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="fw-bold text-dark fs-6">
+                                                @slot.StartTime.ToString("ddd, MMMM dd, yyyy")
+                                            </span>
+                                            <span class="badge rounded-pill @(slot.IsBooked ? "bg-primary" : "bg-success")">
+                                                @(slot.IsBooked ? "Booked" : "Open for Booking")
+                                            </span>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            <i class="fa-regular fa-clock me-1"></i>
+                                            @slot.StartTime.ToString("hh:mm tt") – @slot.EndTime.ToString("hh:mm tt") UTC
+                                        </div>
+
+                                        @if (slot.IsBooked && slot.BookedByStudent != null)
+                                        {
+                                            <div class="p-2 bg-white rounded-3 border small">
+                                                <i class="fa-solid fa-user-graduate text-primary me-1"></i>
+                                                Booked by: <strong>@slot.BookedByStudent.User.Email</strong>
+                                                (Roll: @slot.BookedByStudent.RollNumber, @slot.BookedByStudent.Department?.DepartmentCode)
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        @if (slot.IsBooked)
+                                        {
+                                            <form asp-action="CancelBooking" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="slotId" value="@slot.SlotId" />
+                                                <button type="submit" class="btn btn-outline-warning btn-sm text-dark rounded-3"
+                                                        onclick="return confirm('Cancel this student appointment? The slot will reopen.');">
+                                                    Cancel Booking
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="DeleteSlot" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="slotId" value="@slot.SlotId" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"
+                                                        onclick="return confirm('Delete this office hour slot?');">
+                                                    <i class="fa-solid fa-trash me-1"></i> Delete
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Past Slots History (Collapsible) -->
+        @if (Model.PastSlots.Any())
+        {
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 py-3 px-4" data-bs-toggle="collapse" data-bs-target="#pastSlots" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-muted">
+                            <i class="fa-solid fa-history me-2"></i> Past Consultations Archive (@Model.PastSlots.Count)
+                        </h6>
+                        <i class="fa-solid fa-chevron-down text-muted"></i>
+                    </div>
+                </div>
+                <div class="collapse" id="pastSlots">
+                    <div class="card-body p-4 pt-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle small mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                        <th>Student</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Model.PastSlots.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@p.StartTime.ToString("MMM dd, yyyy")</td>
+                                            <td>@p.StartTime.ToString("hh:mm tt")</td>
+                                            <td>
+                                                <span class="badge @(p.IsBooked ? "bg-secondary" : "bg-light text-muted border")">
+                                                    @(p.IsBooked ? "Completed" : "Unbooked")
+                                                </span>
+                                            </td>
+                                            <td>@(p.BookedByStudent?.User.Email ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

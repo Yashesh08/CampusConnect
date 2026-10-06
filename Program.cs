@@ -21,6 +21,10 @@ builder.Services.AddScoped<ISkillMatchingEngine, SkillMatchingEngine>();
 builder.Services.AddScoped<ISharedOpportunityFeed, SharedOpportunityFeed>();
 builder.Services.AddScoped<IOpportunityCalendarFeed, OpportunityCalendarFeed>();
 builder.Services.AddScoped<IGrievanceRepository, GrievanceRepository>();
+builder.Services.AddScoped<IConnectionRepository, ConnectionRepository>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IFacultyOfficeHourRepository, FacultyOfficeHourRepository>();
+builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options => 
     {

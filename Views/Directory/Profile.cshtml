@@ -1,0 +1,223 @@
+@model CampusConnect.Models.ViewModels.UserPublicProfileViewModel
+@using CampusConnect.Models.Enums
+@using CampusConnect.Models.ViewModels
+
+@{
+    ViewData["Title"] = $"{Model.User.Email} - Profile";
+    bool isStudent = Model.User.Role == UserRole.Student;
+    bool isFaculty = Model.User.Role == UserRole.Faculty || Model.User.Role == UserRole.Hod;
+}
+
+<!-- Back Nav -->
+<div class="mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm rounded-3">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Directory
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: User Summary Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 text-center p-4 mb-4">
+            <div class="card-body">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold shadow mb-3"
+                     style="width: 80px; height: 80px; font-size: 2rem; background: @(isStudent ? "linear-gradient(135deg, #3b82f6, #6366f1)" : "linear-gradient(135deg, #10b981, #059669)");">
+                    @(Model.User.Email.Length > 0 ? Model.User.Email[0].ToString().ToUpper() : "U")
+                </div>
+                <h5 class="fw-bold mb-1">@Model.User.Email</h5>
+                <div class="mb-2">
+                    <span class="badge rounded-pill @(isStudent ? "bg-primary" : "bg-success") px-3 py-1">
+                        @Model.User.Role
+                    </span>
+                </div>
+                <p class="text-muted small mb-3">
+                    <i class="fa-solid fa-building me-1"></i>
+                    @(Model.StudentProfile?.Department?.DepartmentName ?? Model.FacultyProfile?.Department?.DepartmentName ?? "General Campus")
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2">
+                    @if (Model.ConnectionState == DirectoryConnectionState.IsSelf)
+                    {
+                        <span class="badge bg-light text-muted border py-2">This is your profile</span>
+                    }
+                    else if (Model.ConnectionState == DirectoryConnectionState.Connected)
+                    {
+                        <a asp-controller="Messages" asp-action="Index" asp-route-userId="@Model.User.Id"
+                           class="btn btn-primary rounded-3">
+                            <i class="fa-solid fa-comments me-1"></i> Send Direct Message
+                        </a>
+                        <form asp-controller="Network" asp-action="Remove" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="connectionId" value="@Model.ConnectionId" />
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100 rounded-3"
+                                    onclick="return confirm('Are you sure you want to remove this connection?');">
+                                Remove Connection
+                            </button>
+                        </form>
+                    }
+                    else if (Model.ConnectionState == DirectoryConnectionState.PendingSent)
+                    {
+                        <button class="btn btn-light rounded-3 text-muted border" disabled>
+                            <i class="fa-solid fa-clock me-1"></i> Connection Request Sent
+                        </button>
+                    }
+                    else if (Model.ConnectionState == DirectoryConnectionState.PendingReceived)
+                    {
+                        <a asp-controller="Network" asp-action="Index" class="btn btn-warning text-dark rounded-3">
+                            <i class="fa-solid fa-user-clock me-1"></i> Respond to Request
+                        </a>
+                    }
+                    else
+                    {
+                        <form asp-controller="Network" asp-action="Send" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="receiverId" value="@Model.User.Id" />
+                            <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                            <button type="submit" class="btn btn-primary rounded-3">
+                                <i class="fa-solid fa-user-plus me-1"></i> Connect with @Model.User.Email
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Contacts & Links -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h6 class="fw-bold mb-3">
+                <i class="fa-solid fa-circle-info text-primary me-2"></i> Details
+            </h6>
+            <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
+                <li class="d-flex justify-content-between">
+                    <span class="text-muted">Email:</span>
+                    <span class="fw-semibold">@Model.User.Email</span>
+                </li>
+                @if (isStudent && Model.StudentProfile != null)
+                {
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Roll Number:</span>
+                        <span class="fw-semibold">@Model.StudentProfile.RollNumber</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Batch:</span>
+                        <span class="fw-semibold">Class of @Model.StudentProfile.BatchYear</span>
+                    </li>
+                    @if (!string.IsNullOrEmpty(Model.StudentProfile.GitHubUrl))
+                    {
+                        <li class="d-flex justify-content-between">
+                            <span class="text-muted">GitHub:</span>
+                            <a href="@Model.StudentProfile.GitHubUrl" target="_blank" class="text-decoration-none">GitHub Profile</a>
+                        </li>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.StudentProfile.LinkedInUrl))
+                    {
+                        <li class="d-flex justify-content-between">
+                            <span class="text-muted">LinkedIn:</span>
+                            <a href="@Model.StudentProfile.LinkedInUrl" target="_blank" class="text-decoration-none">LinkedIn Profile</a>
+                        </li>
+                    }
+                }
+                else if (isFaculty && Model.FacultyProfile != null)
+                {
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Designation:</span>
+                        <span class="fw-semibold">@Model.FacultyProfile.Designation</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Cabin:</span>
+                        <span class="fw-semibold">@(Model.FacultyProfile.CabinNumber ?? "N/A")</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <!-- Right Column: Profile Content -->
+    <div class="col-lg-8">
+        @if (isStudent && Model.StudentProfile != null)
+        {
+            <!-- Bio -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="fa-solid fa-user text-primary me-2"></i> About
+                </h5>
+                <p class="text-secondary lh-lg mb-0">
+                    @(string.IsNullOrWhiteSpace(Model.StudentProfile.Bio) ? "No bio provided yet." : Model.StudentProfile.Bio)
+                </p>
+            </div>
+
+            <!-- Skills -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="fa-solid fa-code text-primary me-2"></i> Skills & Expertise
+                </h5>
+                @if (!Model.StudentProfile.StudentSkills.Any())
+                {
+                    <p class="text-muted small mb-0">No skills listed yet.</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var ss in Model.StudentProfile.StudentSkills)
+                        {
+                            <span class="badge bg-light text-dark border px-3 py-2 fs-6">
+                                <i class="fa-solid fa-tag text-primary me-1"></i> @ss.Skill.SkillName
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else if (isFaculty)
+        {
+            <!-- Faculty Information & Available Office Hours -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fa-solid fa-calendar-check text-success me-2"></i> Upcoming Office Hours
+                    </h5>
+                    <a asp-controller="OfficeHours" asp-action="Index" asp-route-facultyId="@Model.User.Id"
+                       class="btn btn-outline-success btn-sm rounded-3">
+                        View All Office Hours
+                    </a>
+                </div>
+
+                @if (!Model.UpcomingOfficeHours.Any())
+                {
+                    <p class="text-muted small mb-0">No open office hour slots available right now.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var slot in Model.UpcomingOfficeHours)
+                        {
+                            <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold text-dark">
+                                        <i class="fa-regular fa-clock text-primary me-1"></i>
+                                        @slot.StartTime.ToString("ddd, MMM dd, yyyy")
+                                    </div>
+                                    <div class="small text-muted">
+                                        @slot.StartTime.ToString("hh:mm tt") - @slot.EndTime.ToString("hh:mm tt") UTC
+                                    </div>
+                                </div>
+                                @if (User.IsInRole("Student"))
+                                {
+                                    <form asp-controller="OfficeHours" asp-action="BookSlot" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="slotId" value="@slot.SlotId" />
+                                        <button type="submit" class="btn btn-success btn-sm rounded-3">
+                                            <i class="fa-solid fa-check me-1"></i> Book Slot
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
