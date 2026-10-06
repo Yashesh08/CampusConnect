@@ -168,10 +168,35 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseStaticFiles();
-app.UseSession();
 app.UseRouting();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Cache-Control and Session Synchronization Middleware
+app.Use(async (context, next) =>
+{
+    // Prevent browser bfcache from showing stale authenticated/unauthenticated views on back/forward
+    context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+    context.Response.Headers["Pragma"] = "no-cache";
+    context.Response.Headers["Expires"] = "0";
+
+    // Synchronize session if authenticated via cookie
+    if (context.User.Identity?.IsAuthenticated == true && string.IsNullOrEmpty(context.Session.GetString("UserId")))
+    {
+        var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            context.Session.SetString("UserId", userId);
+        }
+        if (!string.IsNullOrEmpty(context.User.Identity?.Name))
+        {
+            context.Session.SetString("UserEmail", context.User.Identity.Name);
+        }
+    }
+
+    await next();
+});
 
 app.MapControllerRoute(
     name: "default",
