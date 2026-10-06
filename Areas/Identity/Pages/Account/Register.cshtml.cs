@@ -106,10 +106,19 @@ namespace CampusConnect.Areas.Identity.Pages.Account
         }
 
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task<IActionResult> OnGetAsync(string returnUrl = null)
         {
+            returnUrl ??= Url.Content("~/");
+
+            var sessionUserId = HttpContext.Session.GetString("UserId");
+            if (!string.IsNullOrEmpty(sessionUserId) || (User.Identity != null && User.Identity.IsAuthenticated))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
@@ -155,6 +164,10 @@ namespace CampusConnect.Areas.Identity.Pages.Account
                     else
                     {
                         await _signInManager.SignInAsync(user, isPersistent: false);
+                        HttpContext.Session.SetString("UserId", user.Id.ToString());
+                        HttpContext.Session.SetString("UserEmail", user.Email ?? "");
+                        HttpContext.Session.SetString("UserName", user.UserName ?? user.Email ?? "");
+                        HttpContext.Session.SetString("UserRole", user.Role.ToString());
                         return LocalRedirect(returnUrl);
                     }
                 }
