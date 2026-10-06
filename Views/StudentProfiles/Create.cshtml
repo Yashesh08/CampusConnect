@@ -3,64 +3,91 @@
     ViewData["Title"] = "Create Profile";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card-page">
-                <h3 class="mb-4">🎓 Create Your Student Profile</h3>
-                
+<!-- Page Header -->
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="cc-badge cc-badge-purple">
+                    <i class="fa-solid fa-graduation-cap"></i> Onboarding
+                </span>
+                <span class="text-muted small">• Welcome to CampusConnect</span>
+            </div>
+            <h2 class="fw-bold mb-0">Create Student Profile</h2>
+            <p class="text-muted mb-0">Set up your academic profile to unlock personalized opportunity recommendations.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="cc-card">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title">
+                    <i class="fa-solid fa-id-card text-primary me-2"></i> Initial Profile Setup
+                </h5>
+                <span class="cc-badge cc-badge-success">Step 1 of 2</span>
+            </div>
+            <div class="cc-card-body">
                 <form asp-action="Create" method="post" enctype="multipart/form-data">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
                     
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label asp-for="RollNumber" class="form-label"></label>
-                            <input asp-for="RollNumber" class="form-control" />
-                            <span asp-validation-for="RollNumber" class="text-danger"></span>
+                            <label asp-for="RollNumber" class="cc-form-label">University Roll Number</label>
+                            <input asp-for="RollNumber" class="form-control" placeholder="e.g. CS202401" />
+                            <span asp-validation-for="RollNumber" class="text-danger small"></span>
                         </div>
                         
                         <div class="col-md-6">
-                            <label asp-for="BatchYear" class="form-label"></label>
-                            <input asp-for="BatchYear" class="form-control" />
-                            <span asp-validation-for="BatchYear" class="text-danger"></span>
+                            <label asp-for="BatchYear" class="cc-form-label">Batch Graduation Year</label>
+                            <input asp-for="BatchYear" class="form-control" placeholder="e.g. 2026" />
+                            <span asp-validation-for="BatchYear" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-12">
-                            <label asp-for="DepartmentId" class="form-label"></label>
+                            <label asp-for="DepartmentId" class="cc-form-label">Academic Department</label>
                             <select asp-for="DepartmentId" class="form-select" asp-items="@(ViewBag.Departments as SelectList)">
                                 <option value="">-- Select Department --</option>
                             </select>
-                            <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                            <span asp-validation-for="DepartmentId" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-12">
-                            <label asp-for="Bio" class="form-label"></label>
-                            <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
-                            <span asp-validation-for="Bio" class="text-danger"></span>
+                            <label asp-for="Bio" class="cc-form-label">Bio & Interests</label>
+                            <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Tell us about yourself, your technical passions, and what opportunities you are looking for..."></textarea>
+                            <span asp-validation-for="Bio" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-6">
-                            <label asp-for="GitHubUrl" class="form-label"></label>
-                            <input asp-for="GitHubUrl" class="form-control" placeholder="https://github.com/yourusername" />
-                            <span asp-validation-for="GitHubUrl" class="text-danger"></span>
+                            <label asp-for="GitHubUrl" class="cc-form-label">GitHub Profile URL</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-brands fa-github"></i></span>
+                                <input asp-for="GitHubUrl" class="form-control" placeholder="https://github.com/username" />
+                            </div>
+                            <span asp-validation-for="GitHubUrl" class="text-danger small"></span>
                         </div>
                         
                         <div class="col-md-6">
-                            <label asp-for="LinkedInUrl" class="form-label"></label>
-                            <input asp-for="LinkedInUrl" class="form-control" placeholder="https://linkedin.com/in/yourusername" />
-                            <span asp-validation-for="LinkedInUrl" class="text-danger"></span>
+                            <label asp-for="LinkedInUrl" class="cc-form-label">LinkedIn Profile URL</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-brands fa-linkedin text-primary"></i></span>
+                                <input asp-for="LinkedInUrl" class="form-control" placeholder="https://linkedin.com/in/username" />
+                            </div>
+                            <span asp-validation-for="LinkedInUrl" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-12">
-                            <label asp-for="ResumeFile" class="form-label"></label>
+                            <label asp-for="ResumeFile" class="cc-form-label">Upload Resume Document</label>
                             <input asp-for="ResumeFile" class="form-control" type="file" accept=".pdf,.doc,.docx" />
-                            <div class="form-text">Upload your resume (PDF or DOCX).</div>
+                            <small class="text-muted d-block mt-1">Accepted formats: PDF or DOCX (Max 5MB).</small>
                         </div>
                     </div>
 
-                    <div class="mt-4 d-flex justify-content-end gap-2">
-                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Create Profile</button>
+                    <div class="mt-4 pt-3 border-top text-end">
+                        <button type="submit" class="cc-btn px-4">
+                            Save Profile & Proceed to Dashboard <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </button>
                     </div>
                 </form>
             </div>

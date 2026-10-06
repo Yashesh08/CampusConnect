@@ -3,70 +3,110 @@
     ViewData["Title"] = "Manage Skills";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card-page mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3>💡 Manage Your Skills</h3>
-                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Profile</a>
-                </div>
+<!-- Page Header -->
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="cc-badge cc-badge-purple">
+                    <i class="fa-solid fa-brain"></i> Skill Inventory
+                </span>
+                <span class="text-muted small">• FR-2 Competencies</span>
+            </div>
+            <h2 class="fw-bold mb-0">Manage Your Profile Skills</h2>
+            <p class="text-muted mb-0">Record your technical proficiencies, frameworks, and tools to power automated opportunity matching.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Dashboard" class="cc-btn cc-btn-outline">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <a asp-controller="Home" asp-action="TestEngine" class="cc-btn cc-btn-secondary">
+                <i class="fa-solid fa-sliders"></i> Test Match Engine
+            </a>
+        </div>
+    </div>
+</div>
 
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Add Skill Card -->
+        <div class="cc-card mb-4">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title">
+                    <i class="fa-solid fa-plus-circle text-primary me-2"></i> Add Skill to Profile
+                </h5>
+                <span class="cc-badge cc-badge-success">Curated Registry</span>
+            </div>
+            <div class="cc-card-body">
                 <form asp-action="AddSkill" method="post" class="row g-3 align-items-end">
                     <div class="col-md-5">
-                        <label class="form-label">Select Skill</label>
+                        <label class="cc-form-label">Select Skill from Registry</label>
                         <select name="skillId" class="form-select" asp-items="@(ViewBag.AvailableSkills as SelectList)" required>
-                            <option value="">-- Select Skill --</option>
+                            <option value="">-- Choose Skill --</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Proficiency</label>
+                        <label class="cc-form-label">Proficiency Level</label>
                         <select name="proficiencyLevel" class="form-select" asp-items="Html.GetEnumSelectList<CampusConnect.Models.Enums.ProficiencyLevel>()" required></select>
                     </div>
                     <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary w-100">Add Skill</button>
+                        <button type="submit" class="cc-btn w-100">
+                            <i class="fa-solid fa-plus"></i> Add Skill
+                        </button>
                     </div>
                 </form>
             </div>
+        </div>
 
-            <div class="card-page">
-                <h5 class="mb-4">Your Added Skills</h5>
+        <!-- Current Skills Card -->
+        <div class="cc-card">
+            <div class="cc-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="cc-card-title">
+                        <i class="fa-solid fa-list-check text-purple me-2"></i> Your Registered Skills
+                    </h5>
+                    <span class="cc-badge cc-badge-purple">@Model.StudentSkills.Count Total</span>
+                </div>
+            </div>
+            <div class="cc-card-body p-0">
                 @if (Model.StudentSkills.Any())
                 {
                     <div class="table-responsive">
-                        <table class="table align-middle">
+                        <table class="cc-table align-middle">
                             <thead>
                                 <tr>
-                                    <th>Skill</th>
+                                    <th>Skill Name</th>
                                     <th>Category</th>
-                                    <th>Proficiency</th>
-                                    <th class="text-end">Action</th>
+                                    <th>Proficiency Level</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var ss in Model.StudentSkills)
                                 {
+                                    var prof = ss.ProficiencyLevel.ToString().ToLower();
                                     <tr>
-                                        <td class="fw-bold">@ss.Skill.SkillName</td>
-                                        <td><span class="badge bg-secondary">@ss.Skill.Category</span></td>
                                         <td>
-                                            @if (ss.ProficiencyLevel == CampusConnect.Models.Enums.ProficiencyLevel.Beginner)
-                                            {
-                                                <span class="badge bg-info text-dark">@ss.ProficiencyLevel</span>
-                                            }
-                                            else if (ss.ProficiencyLevel == CampusConnect.Models.Enums.ProficiencyLevel.Intermediate)
-                                            {
-                                                <span class="badge bg-primary">@ss.ProficiencyLevel</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-success">@ss.ProficiencyLevel</span>
-                                            }
+                                            <span class="fw-bold text-dark fs-6">@ss.Skill.SkillName</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@ss.Skill.Category</span>
+                                        </td>
+                                        <td>
+                                            <span class="proficiency-pill @prof">
+                                                @if (prof == "advanced")
+                                                {
+                                                    <i class="fa-solid fa-star me-1 text-warning"></i>
+                                                }
+                                                @ss.ProficiencyLevel
+                                            </span>
                                         </td>
                                         <td class="text-end">
                                             <form asp-action="RemoveSkill" method="post" class="d-inline">
                                                 <input type="hidden" name="studentSkillId" value="@ss.StudentSkillId" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this skill?');">Remove</button>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-3" onclick="return confirm('Remove @ss.Skill.SkillName from your profile?');" title="Remove Skill">
+                                                    <i class="fa-solid fa-trash-can me-1"></i> Remove
+                                                </button>
                                             </form>
                                         </td>
                                     </tr>
@@ -77,7 +117,13 @@
                 }
                 else
                 {
-                    <p class="text-muted text-center py-4">No skills added yet. Add some skills above to boost your profile!</p>
+                    <div class="empty-state-box m-4">
+                        <div class="empty-state-icon">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">No Skills Added Yet</h5>
+                        <p class="text-muted small mb-0">Use the form above to register your skills and begin receiving opportunity recommendations.</p>
+                    </div>
                 }
             </div>
         </div>

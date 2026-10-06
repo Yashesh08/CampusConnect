@@ -1,20 +1,84 @@
-@{
-    Layout = null;
-}
 @model List<CampusConnect.Models.StudentProfile>
-<h1>Student Profiles</h1>
-<a asp-action="Create">+ New Profile</a>
-<table>
-    <tr><th>Roll</th><th>Department</th><th>Batch</th><th></th></tr>
-@foreach(var p in Model) {
-    <tr>
-        <td>@p.RollNumber</td>
-        <td>@p.Department?.DepartmentName</td>
-        <td>@p.BatchYear</td>
-        <td>
-            <a asp-action="Edit" asp-route-id="@p.ProfileId">Edit</a> |
-            <a asp-action="Delete" asp-route-id="@p.ProfileId">Delete</a>
-        </td>
-    </tr>
+@{
+    ViewData["Title"] = "Student Profiles";
 }
-</table>
+
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="cc-badge cc-badge-purple">
+                    <i class="fa-solid fa-users"></i> Directory Records
+                </span>
+                <span class="text-muted small">• FR-2 Student Profiles</span>
+            </div>
+            <h2 class="fw-bold mb-0">Student Profiles Registry</h2>
+            <p class="text-muted mb-0">Enrolled student profiles and academic departmental records.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Directory" asp-action="Index" asp-route-role="Student" class="cc-btn cc-btn-outline">
+                <i class="fa-solid fa-address-book"></i> Interactive Student Directory
+            </a>
+            <a asp-action="Create" class="cc-btn">
+                <i class="fa-solid fa-plus"></i> New Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="cc-card">
+    <div class="cc-card-header">
+        <h5 class="cc-card-title">
+            <i class="fa-solid fa-graduation-cap text-primary me-2"></i> Registered Students
+        </h5>
+        <span class="cc-badge cc-badge-purple">@(Model?.Count ?? 0) Total</span>
+    </div>
+    <div class="cc-card-body p-0">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="cc-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Department</th>
+                            <th>Batch</th>
+                            <th>Completion</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-dark">@p.RollNumber</td>
+                                <td>@(p.Department?.DepartmentName ?? "General")</td>
+                                <td>@(p.BatchYear > 0 ? p.BatchYear.ToString() : "N/A")</td>
+                                <td>
+                                    <span class="cc-badge @(p.ProfileCompletionScore >= 80 ? "cc-badge-success" : (p.ProfileCompletionScore >= 50 ? "cc-badge-warning" : "cc-badge-danger"))">
+                                        @p.ProfileCompletionScore%
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-action="Edit" asp-route-id="@p.ProfileId" class="btn btn-sm btn-outline-primary border-0 rounded-3">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-box m-4">
+                <div class="empty-state-icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">No Student Profiles Found</h5>
+                <p class="text-muted small mb-0">No student profiles are registered in this view.</p>
+            </div>
+        }
+    </div>
+</div>

@@ -112,35 +112,27 @@ public class OpportunitySecurityPenetrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task V009_DEMO_Student_CanView_PendingReviewOpportunity_Via_Details_DemonstratesVulnerability()
+    public async Task V009_FIXED_Student_CannotView_PendingReviewOpportunity_Via_Details()
     {
         // ATTACK: Student visits /Opportunities/Details/{pendingOppId} directly
         var studentClient = await _factory.CreateAuthenticatedClientAsync("student.alice@campusconnect.edu");
         var response = await studentClient.GetAsync($"/Opportunities/Details/{_pendingOppId}");
 
-        var html = await response.Content.ReadAsStringAsync();
-        bool canViewPending = response.StatusCode == HttpStatusCode.OK && html.Contains("Confidential Quantum Research Internship");
-
-        // V009 Proof: The unapproved opportunity is visible to students!
-        Assert.True(canViewPending, "V009 REPRODUCED: Student is able to view a PendingReview opportunity via direct URL!");
+        CampusConnectTestFactory.AssertAccessDenied(response);
     }
 
     [Fact]
-    public async Task V009_DEMO_Student_CanView_RejectedOpportunity_Via_Details_DemonstratesVulnerability()
+    public async Task V009_FIXED_Student_CannotView_RejectedOpportunity_Via_Details()
     {
         // ATTACK: Student visits /Opportunities/Details/{rejectedOppId} directly
         var studentClient = await _factory.CreateAuthenticatedClientAsync("student.alice@campusconnect.edu");
         var response = await studentClient.GetAsync($"/Opportunities/Details/{_rejectedOppId}");
 
-        var html = await response.Content.ReadAsStringAsync();
-        bool canViewRejected = response.StatusCode == HttpStatusCode.OK && html.Contains("Rejected Hazardous Experiment");
-
-        // V009 Proof: The rejected opportunity is visible to students!
-        Assert.True(canViewRejected, "V009 REPRODUCED: Student is able to view a Rejected opportunity via direct URL!");
+        CampusConnectTestFactory.AssertAccessDenied(response);
     }
 
     [Fact]
-    public async Task V017_DEMO_Student_CanApply_To_PendingReviewOpportunity_DemonstratesVulnerability()
+    public async Task V017_FIXED_Student_CannotApply_To_PendingReviewOpportunity()
     {
         // ATTACK: Student sends POST /Applications/Apply with opportunityId = pendingOppId
         var studentClient = await _factory.CreateAuthenticatedClientAsync("student.alice@campusconnect.edu");
@@ -154,18 +146,18 @@ public class OpportunitySecurityPenetrationTests : IAsyncLifetime
 
         var response = await studentClient.PostAsync("/Applications/Apply", new FormUrlEncodedContent(formData));
 
-        // Check if an application was created in DB
+        // Check that NO application was created in DB
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var student = await db.Users.Include(u => u.StudentProfile).FirstAsync(u => u.Email == "student.alice@campusconnect.edu");
         
         bool applicationCreated = await db.Applications.AnyAsync(a => a.OpportunityId == _pendingOppId && a.StudentId == student.StudentProfile!.ProfileId);
 
-        Assert.True(applicationCreated, "V017 REPRODUCED: Student was able to apply to an unapproved (PendingReview) opportunity!");
+        Assert.False(applicationCreated, "V017 FIXED: Application must NOT be created for PendingReview opportunity!");
     }
 
     [Fact]
-    public async Task V017_DEMO_Student_CanApply_To_RejectedOpportunity_DemonstratesVulnerability()
+    public async Task V017_FIXED_Student_CannotApply_To_RejectedOpportunity()
     {
         // ATTACK: Student sends POST /Applications/Apply with opportunityId = rejectedOppId
         var studentClient = await _factory.CreateAuthenticatedClientAsync("student.bob@campusconnect.edu");
@@ -185,7 +177,28 @@ public class OpportunitySecurityPenetrationTests : IAsyncLifetime
 
         bool applicationCreated = await db.Applications.AnyAsync(a => a.OpportunityId == _rejectedOppId && a.StudentId == student.StudentProfile!.ProfileId);
 
-        Assert.True(applicationCreated, "V017 REPRODUCED: Student was able to apply to a REJECTED opportunity!");
+        Assert.False(applicationCreated, "V017 FIXED: Application must NOT be created for Rejected opportunity!");
+    }
+
+    [Fact]
+    public async Task V010_FIXED_Admin_CannotApprove_AlreadyRejectedOpportunity()
+    {
+        // V010: State machine check - a Rejected opportunity cannot transition directly to Approved
+        var adminClient = await _factory.CreateAuthenticatedClientAsync("admin@campusconnect.edu");
+        var (token, _) = await _factory.GetPageWithTokenAsync(adminClient, "/Opportunities/PendingApprovals");
+
+        var formData = new Dictionary<string, string>
+        {
+            { "id", _rejectedOppId.ToString() },
+            { "__RequestVerificationToken", token }
+        };
+
+        var response = await adminClient.PostAsync($"/Opportunities/Approve/{_rejectedOppId}", new FormUrlEncodedContent(formData));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var opp = await db.Opportunities.FindAsync(_rejectedOppId);
+        Assert.Equal(ApprovalStatus.Rejected, opp!.ApprovalStatus);
     }
 
     [Fact]

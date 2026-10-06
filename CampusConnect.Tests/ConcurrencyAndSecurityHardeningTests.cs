@@ -304,6 +304,7 @@ public class ConcurrencyAndSecurityHardeningTests : IAsyncLifetime
         };
 
         db.Opportunities.Add(opp);
+        await db.SaveChangesAsync();
 
         var app = new Application
         {

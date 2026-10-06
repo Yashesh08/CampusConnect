@@ -98,7 +98,7 @@ public class GrievanceSecurityPenetrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task V007_DEMO_StudentB_Accessing_StudentA_Grievance_Via_Tracker_DemonstratesVulnerability()
+    public async Task V007_FIXED_StudentB_Accessing_StudentA_Grievance_Via_Tracker_DoesNotLeakData()
     {
         // ATTACK: Student B accesses /Grievances/Tracker?ticketId={StudentA's Grievance ID}
         var clientB = await _factory.CreateAuthenticatedClientAsync("student.bob@campusconnect.edu");
@@ -106,18 +106,15 @@ public class GrievanceSecurityPenetrationTests : IAsyncLifetime
 
         var html = await response.Content.ReadAsStringAsync();
 
-        // If vulnerable, Student B can see Alice's confidential grievance details!
-        // We record whether this leaks Alice's confidential information:
+        // VERIFY: Student B must NOT see Alice's confidential grievance details!
         bool leaksAliceConfidentialData = html.Contains("Alice&#x27;s confidential harassment") || html.Contains("Alice's confidential harassment");
         
-        // This test proves whether V007 exists:
-        // Expected secure behavior: B should NOT see A's grievance (403 Forbidden or "No Ticket Found").
-        // Current actual behavior: leaksAliceConfidentialData is TRUE!
-        Assert.True(leaksAliceConfidentialData, "V007 REPRODUCED: Student B is able to view Student A's private grievance through Tracker!");
+        Assert.False(leaksAliceConfidentialData, "V007 FIXED: Student B must NOT be able to view Student A's private grievance through Tracker!");
+        Assert.Contains("No Ticket Found", html);
     }
 
     [Fact]
-    public async Task V007_DEMO_StudentB_Accessing_StudentA_Grievance_Via_PrefixTicketCode_DemonstratesVulnerability()
+    public async Task V007_FIXED_StudentB_Accessing_StudentA_Grievance_Via_PrefixTicketCode_DoesNotLeakData()
     {
         // ATTACK: Student B accesses Tracker with 8-char prefix
         var prefix = _studentAGrievanceId.ToString()[..8];
@@ -127,24 +124,19 @@ public class GrievanceSecurityPenetrationTests : IAsyncLifetime
         var html = await response.Content.ReadAsStringAsync();
         bool leaksAliceConfidentialData = html.Contains("Alice&#x27;s confidential harassment") || html.Contains("Alice's confidential harassment");
 
-        Assert.True(leaksAliceConfidentialData, "V007 REPRODUCED: Student B can view Student A's grievance using 8-character prefix search!");
+        Assert.False(leaksAliceConfidentialData, "V007 FIXED: Student B must NOT be able to view Student A's grievance using prefix search!");
+        Assert.Contains("No Ticket Found", html);
     }
 
     [Fact]
-    public async Task V007b_DEMO_StudentB_Accessing_AnonymousGrievance_Via_Details_DemonstratesVulnerability()
+    public async Task V007b_FIXED_StudentB_Accessing_AnonymousGrievance_Via_Details_IsForbidden()
     {
         // ATTACK: Student B calls /Grievances/Details/{AnonymousGrievanceId}
-        // Because of '&& !grievance.IsAnonymous' in GrievancesController line 209, non-privileged users bypass Forbid()!
+        // V007b FIX: Non-privileged users cannot view anonymous grievances!
         var clientB = await _factory.CreateAuthenticatedClientAsync("student.bob@campusconnect.edu");
         var response = await clientB.GetAsync($"/Grievances/Details/{_anonymousGrievanceId}");
 
-        var html = await response.Content.ReadAsStringAsync();
-
-        // If vulnerable, Student B can read the anonymous grievance!
-        bool leaksAnonymousGrievance = response.StatusCode == HttpStatusCode.OK && 
-                                       (html.Contains("exam grading irregularities"));
-
-        Assert.True(leaksAnonymousGrievance, "V007b REPRODUCED: Student B can view anonymous grievances via /Grievances/Details!");
+        CampusConnectTestFactory.AssertAccessDenied(response);
     }
 
     [Fact]

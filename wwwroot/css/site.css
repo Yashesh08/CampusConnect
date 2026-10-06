@@ -40,12 +40,80 @@ body {
 
 /* Glassmorphism Sticky Navbar */
 .cc-navbar {
-    background: rgba(255, 255, 255, 0.85) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(226, 232, 240, 0.8);
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
     transition: all 0.3s ease;
+    z-index: 1030;
+}
+
+.cc-navbar .dropdown-menu {
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    min-width: 230px;
+}
+
+.cc-navbar .dropdown-item {
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.15s ease;
+}
+
+.cc-navbar .dropdown-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.cc-navbar .dropdown-item i {
+    width: 18px;
+    text-align: center;
+}
+
+main[role="main"] {
+    flex: 1 0 auto;
+    width: 100%;
+}
+
+/* Card Component Design System */
+.cc-card {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cc-card.h-100 {
+    height: 100%;
+}
+
+.card-page {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 1.75rem;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 1.5rem;
+}
+
+.cc-card:hover, .card-page:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: #CBD5E1;
 }
 
 .cc-navbar .navbar-brand {
@@ -130,8 +198,13 @@ body {
     max-width: 650px;
 }
 
+main[role="main"] {
+    flex: 1 0 auto;
+    min-height: 65vh;
+}
+
 /* Card Component Design System */
-.cc-card, .card-page {
+.cc-card {
     background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
@@ -143,8 +216,18 @@ body {
     flex-direction: column;
 }
 
+.card-page {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 1.75rem;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 1.5rem;
+}
+
 .cc-card:hover, .card-page:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
     border-color: #CBD5E1;
 }
@@ -405,3 +488,99 @@ body {
     border-color: #1E293B;
     margin: 2.5rem 0 1.5rem 0;
 }
+
+/* Skill & Proficiency Badge System */
+.skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    color: var(--text-main);
+}
+
+.skill-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.skill-chip .proficiency-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.proficiency-pill.beginner {
+    background: #DEF7EC;
+    color: #03543F;
+}
+
+.proficiency-pill.intermediate {
+    background: #EEF2FF;
+    color: #4F46E5;
+}
+
+.proficiency-pill.advanced {
+    background: #F3E8FF;
+    color: #7E22CE;
+}
+
+/* Profile Completion Ring & Gradient Progress */
+.progress-gradient {
+    height: 12px;
+    border-radius: 9999px;
+    background-color: #EEF2FF;
+    overflow: hidden;
+}
+
+.progress-gradient .progress-bar {
+    background: var(--gradient-primary);
+    border-radius: 9999px;
+    transition: width 0.6s ease;
+}
+
+/* Simulator Callouts */
+.match-metric-box {
+    background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+}
+
+.match-score-display {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+}
+
+.empty-state-box {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--surface);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+

@@ -98,9 +98,10 @@ public static class DbInitializer
 
         // Admin User
         var adminEmail = "admin@campusconnect.edu";
-        if (await userManager.FindByEmailAsync(adminEmail) == null)
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
         {
-            var adminUser = new User
+            adminUser = new User
             {
                 UserName = adminEmail,
                 Email = adminEmail,
@@ -114,6 +115,19 @@ public static class DbInitializer
             {
                 await userManager.AddToRoleAsync(adminUser, UserRole.Admin.ToString());
             }
+        }
+
+        if (adminUser != null && cseDept != null && !await dbContext.FacultyProfiles.AnyAsync(fp => fp.UserId == adminUser.Id))
+        {
+            var adminProfile = new FacultyProfile
+            {
+                UserId = adminUser.Id,
+                DepartmentId = cseDept.DepartmentId,
+                Designation = "Chief System Administrator",
+                CabinNumber = "Admin-HQ"
+            };
+            await dbContext.FacultyProfiles.AddAsync(adminProfile);
+            await dbContext.SaveChangesAsync();
         }
 
         // HOD User

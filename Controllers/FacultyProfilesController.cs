@@ -45,7 +45,28 @@ public class FacultyProfilesController : Controller
         if (user == null) return Challenge();
 
         var profile = await _repository.GetByUserIdAsync(user.Id);
-        if (profile == null) return RedirectToAction(nameof(Create));
+        if (profile == null)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                var depts = await _deptRepo.GetAllAsync();
+                var firstDept = depts.FirstOrDefault();
+                if (firstDept != null)
+                {
+                    var newAdminProfile = new FacultyProfile
+                    {
+                        UserId = user.Id,
+                        DepartmentId = firstDept.DepartmentId,
+                        Designation = "Chief System Administrator",
+                        CabinNumber = "Admin-HQ"
+                    };
+                    await _repository.AddAsync(newAdminProfile);
+                    profile = await _repository.GetByUserIdAsync(user.Id);
+                    if (profile != null) return View(profile);
+                }
+            }
+            return RedirectToAction(nameof(Create));
+        }
 
         return View(profile);
     }
@@ -85,7 +106,8 @@ public class FacultyProfilesController : Controller
         };
 
         await _repository.AddAsync(profile);
-        return RedirectToAction("Index", "Home");
+        TempData["SuccessMessage"] = "Profile saved successfully!";
+        return RedirectToAction(nameof(Dashboard));
     }
 
     public async Task<IActionResult> Edit()
@@ -129,6 +151,7 @@ public class FacultyProfilesController : Controller
         profile.CabinNumber = model.CabinNumber;
 
         await _repository.UpdateAsync(profile);
-        return RedirectToAction("Index", "Home");
+        TempData["SuccessMessage"] = "Profile updated successfully!";
+        return RedirectToAction(nameof(Dashboard));
     }
 }

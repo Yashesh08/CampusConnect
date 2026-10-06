@@ -1,52 +1,161 @@
 @model CampusConnect.Models.User
 @{
-    ViewData["Title"] = "HOD Dashboard";
+    var isAdmin = User.IsInRole("Admin");
+    ViewData["Title"] = isAdmin ? "Administrative Governance Portal" : "HOD Governance Portal";
     var pendingCount = ViewBag.PendingOpportunitiesCount ?? 0;
 }
 
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold">Head of Department Dashboard</h2>
-            <p class="text-muted">Welcome to the administrative portal, @Model.Email!</p>
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="cc-badge @(isAdmin ? "cc-badge-danger" : "cc-badge-warning")">
+                    <i class="fa-solid @(isAdmin ? "fa-shield-halved" : "fa-landmark")"></i>
+                    @(isAdmin ? "System Administrator" : "Head of Department")
+                </span>
+                <span class="text-muted small">• @Model.Email</span>
+            </div>
+            <h2 class="fw-bold mb-0">@(isAdmin ? "System Administrative Portal" : "Head of Department Dashboard")</h2>
+            <p class="text-muted mb-0">Institutional administration, approvals workflow, and academic registry controls.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="FacultyProfiles" asp-action="Dashboard" class="cc-btn cc-btn-outline">
+                <i class="fa-solid fa-id-badge"></i> My Profile
+            </a>
+            <a asp-controller="Organizer" asp-action="Dashboard" class="cc-btn cc-btn-secondary">
+                <i class="fa-solid fa-chart-line"></i> Organizer Suite
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div class="metric-icon amber">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div class="metric-details">
+                <div class="metric-label">Pending Approvals</div>
+                <div class="metric-value">@pendingCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div class="metric-icon indigo">
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div class="metric-details">
+                <div class="metric-label">Academic Units</div>
+                <div class="metric-value">Departments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <div class="metric-icon purple">
+                <i class="fa-solid fa-lightbulb"></i>
+            </div>
+            <div class="metric-details">
+                <div class="metric-label">Curriculum Skills</div>
+                <div class="metric-value">Registry</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Cards -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="cc-card h-100">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title"><i class="fa-solid fa-clipboard-check text-warning me-2"></i> Opportunity Approvals</h5>
+                @if (pendingCount > 0)
+                {
+                    <span class="cc-badge cc-badge-warning">@pendingCount Action@(pendingCount > 1 ? "s" : "")</span>
+                }
+                else
+                {
+                    <span class="cc-badge cc-badge-success">Clear</span>
+                }
+            </div>
+            <div class="cc-card-body">
+                <p class="text-muted">Review, approve, or reject new internship and event listings submitted by campus organizers.</p>
+            </div>
+            <div class="cc-card-footer">
+                <a asp-controller="Opportunities" asp-action="PendingApprovals" class="cc-btn w-100">
+                    Review Queue <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 border-start border-4 border-warning">
-                <div class="card-body">
-                    <h5 class="card-title text-muted fw-bold text-uppercase mb-3">Pending Approvals</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h2 class="fw-bold text-dark mb-0">@pendingCount</h2>
-                        <i class="fa-solid fa-file-signature fa-2x text-warning opacity-50"></i>
-                    </div>
-                    <a asp-controller="Opportunities" asp-action="PendingApprovals" class="btn btn-outline-warning btn-sm mt-3 w-100">Review Now</a>
-                </div>
+    <div class="col-md-4">
+        <div class="cc-card h-100">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title"><i class="fa-solid fa-building-columns text-primary me-2"></i> Academic Departments</h5>
+                <span class="cc-badge cc-badge-info">Faculty & HODs</span>
+            </div>
+            <div class="cc-card-body">
+                <p class="text-muted">Manage departmental structures, assign department codes, and oversee academic listings.</p>
+            </div>
+            <div class="cc-card-footer">
+                <a asp-controller="Departments" asp-action="Index" class="cc-btn cc-btn-outline w-100">
+                    Manage Departments <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
             </div>
         </div>
-        
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 border-start border-4 border-primary">
-                <div class="card-body">
-                    <h5 class="card-title text-muted fw-bold text-uppercase mb-3">Academic Departments</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <i class="fa-solid fa-building-columns fa-2x text-primary opacity-50"></i>
-                    </div>
-                    <a asp-controller="Departments" asp-action="Index" class="btn btn-outline-primary btn-sm mt-3 w-100">Manage Departments</a>
-                </div>
-            </div>
-        </div>
+    </div>
 
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 border-start border-4 border-info">
-                <div class="card-body">
-                    <h5 class="card-title text-muted fw-bold text-uppercase mb-3">Skills Registry</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <i class="fa-solid fa-lightbulb fa-2x text-info opacity-50"></i>
-                    </div>
-                    <a asp-controller="Skills" asp-action="Index" class="btn btn-outline-info btn-sm mt-3 w-100">Manage Skills</a>
-                </div>
+    <div class="col-md-4">
+        <div class="cc-card h-100">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title"><i class="fa-solid fa-lightbulb text-purple me-2"></i> Skills Registry</h5>
+                <span class="cc-badge cc-badge-purple">Matching Database</span>
+            </div>
+            <div class="cc-card-body">
+                <p class="text-muted">Maintain standard skills, categorize technical tools, and power student opportunity matching.</p>
+            </div>
+            <div class="cc-card-footer">
+                <a asp-controller="Skills" asp-action="Index" class="cc-btn cc-btn-outline w-100">
+                    Manage Skills <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="cc-card h-100">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i> Grievance Escalations</h5>
+                <span class="cc-badge cc-badge-danger">High Priority</span>
+            </div>
+            <div class="cc-card-body">
+                <p class="text-muted">Oversee urgent or SLA-breached campus grievances escalated directly to administrative leadership.</p>
+            </div>
+            <div class="cc-card-footer">
+                <a asp-controller="Grievances" asp-action="Escalations" class="cc-btn cc-btn-secondary w-100">
+                    View Escalated Tickets <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="cc-card h-100">
+            <div class="cc-card-header">
+                <h5 class="cc-card-title"><i class="fa-solid fa-sliders text-warning me-2"></i> Skill Match Simulator</h5>
+                <span class="cc-badge cc-badge-warning">Matching Engine</span>
+            </div>
+            <div class="cc-card-body">
+                <p class="text-muted">Simulate student skill profiles against opportunities to test algorithmic scoring and gap analysis.</p>
+            </div>
+            <div class="cc-card-footer">
+                <a asp-controller="Home" asp-action="TestEngine" class="cc-btn cc-btn-outline w-100">
+                    Launch Simulator <i class="fa-solid fa-play ms-1"></i>
+                </a>
             </div>
         </div>
     </div>

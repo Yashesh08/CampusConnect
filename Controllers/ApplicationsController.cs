@@ -39,6 +39,13 @@ public class ApplicationsController : Controller
             return NotFound("Opportunity not found.");
         }
 
+        // SECURITY FIX (V017): Cannot apply to unapproved or rejected opportunities
+        if (opportunity.ApprovalStatus != ApprovalStatus.Approved)
+        {
+            TempData["ErrorMessage"] = "Applications are only accepted for approved opportunities.";
+            return RedirectToAction("Index", "Opportunities");
+        }
+
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 

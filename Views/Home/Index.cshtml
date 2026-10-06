@@ -223,15 +223,38 @@ else if (userRole.HasValue)
         <div class="col-md-4">
             <div class="cc-card h-100">
                 <div class="cc-card-header">
-                    <h5 class="cc-card-title"><i class="fa-solid fa-id-card text-purple me-2"></i> Student Profiles</h5>
+                    @if (userRole == UserRole.Student)
+                    {
+                        <h5 class="cc-card-title"><i class="fa-solid fa-id-card text-purple me-2"></i> My Profile & Skills</h5>
+                    }
+                    else
+                    {
+                        <h5 class="cc-card-title"><i class="fa-solid fa-users-viewfinder text-purple me-2"></i> Student Directory</h5>
+                    }
                 </div>
                 <div class="cc-card-body">
-                    <p class="text-muted">View student profiles, skill records, GitHub/LinkedIn links, and resumes.</p>
+                    @if (userRole == UserRole.Student)
+                    {
+                        <p class="text-muted">Manage your student profile, upload your resume, update social links, and configure your skills.</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Explore enrolled student profiles, review their technical skills, portfolios, and verified resumes.</p>
+                    }
                 </div>
                 <div class="cc-card-footer">
-                    <a class="cc-btn w-100" asp-controller="StudentProfiles" asp-action="Index">
-                        Manage Profiles <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
+                    @if (userRole == UserRole.Student)
+                    {
+                        <a class="cc-btn w-100" asp-controller="StudentProfiles" asp-action="Dashboard">
+                            Manage My Profile <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="cc-btn w-100" asp-controller="Directory" asp-action="Index" asp-route-role="Student">
+                            Browse Student Profiles <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    }
                 </div>
             </div>
         </div>

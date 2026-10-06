@@ -108,6 +108,17 @@ public class GrievancesController : Controller
                     selected = await _grievanceRepo.GetByIdAsync(selected.GrievanceId);
                 }
             }
+
+            // SECURITY FIX (V007): Ensure user is authorized to view this ticket!
+            // Non-privileged users (e.g. students) must only view their own grievance.
+            bool isPrivileged = User.IsInRole("Hod") || User.IsInRole("Admin");
+            bool isAssignedOfficer = selected != null && selected.AssignedToUserId == user.Id;
+
+            if (selected != null && !isPrivileged && !isAssignedOfficer && selected.ComplainantUserId != user.Id)
+            {
+                // Do not leak other users' or anonymous grievances to unauthorized students
+                selected = null;
+            }
         }
         else if (myGrievances.Any())
         {
@@ -205,8 +216,9 @@ public class GrievancesController : Controller
         bool isOfficer = User.IsInRole("Faculty") || isPrivileged;
         bool isAssignedOfficer = grievance.AssignedToUserId == user.Id;
 
-        // Non-privileged users can only view their own submissions
-        if (!isPrivileged && !isAssignedOfficer && grievance.ComplainantUserId != user.Id && !grievance.IsAnonymous)
+        // SECURITY FIX (V007b): Non-privileged users can only view their own submissions.
+        // Anonymous grievances can only be viewed by privileged users or the assigned officer.
+        if (!isPrivileged && !isAssignedOfficer && (grievance.ComplainantUserId != user.Id || grievance.IsAnonymous))
         {
             return Forbid();
         }

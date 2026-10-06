@@ -9,7 +9,7 @@ using CampusConnect.Services;
 
 namespace CampusConnect.Controllers;
 
-[Authorize(Roles = "Student")]
+[Authorize]
 public class StudentProfilesController : Controller
 {
     private readonly IStudentProfileRepository _repository;
@@ -43,6 +43,11 @@ public class StudentProfilesController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
 
+        if (user.Role != CampusConnect.Models.Enums.UserRole.Student)
+        {
+            return RedirectToAction("Index", "Directory", new { role = "Student" });
+        }
+
         var profile = await _repository.GetByUserIdAsync(user.Id);
         if (profile == null)
         {
@@ -52,6 +57,7 @@ public class StudentProfilesController : Controller
         return RedirectToAction(nameof(Dashboard));
     }
 
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> Dashboard()
     {
         var user = await _userManager.GetUserAsync(User);
@@ -72,6 +78,7 @@ public class StudentProfilesController : Controller
         return View(profile);
     }
 
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> Create()
     {
         var user = await _userManager.GetUserAsync(User);
@@ -126,9 +133,11 @@ public class StudentProfilesController : Controller
         profile.ProfileCompletionScore = CalculateCompletionScore(profile);
 
         await _repository.AddAsync(profile);
-        return RedirectToAction("Index", "Home");
+        TempData["SuccessMessage"] = "Profile created successfully!";
+        return RedirectToAction(nameof(Dashboard));
     }
 
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> Edit()
     {
         var user = await _userManager.GetUserAsync(User);
@@ -155,6 +164,7 @@ public class StudentProfilesController : Controller
         return View(model);
     }
 
+    [Authorize(Roles = "Student")]
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(StudentProfileViewModel model)
     {
@@ -193,7 +203,8 @@ public class StudentProfilesController : Controller
         profile.ProfileCompletionScore = CalculateCompletionScore(profile);
 
         await _repository.UpdateAsync(profile);
-        return RedirectToAction("Index", "Home");
+        TempData["SuccessMessage"] = "Profile updated successfully!";
+        return RedirectToAction(nameof(Dashboard));
     }
 
     private async Task<(string? url, string? error)> HandleFileUpload(IFormFile file)
@@ -228,6 +239,7 @@ public class StudentProfilesController : Controller
         return score;
     }
 
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> ManageSkills()
     {
         var user = await _userManager.GetUserAsync(User);

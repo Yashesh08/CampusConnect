@@ -71,6 +71,19 @@ public class OpportunitiesController : Controller
         }
 
         var currentUser = await _userManager.GetUserAsync(User);
+
+        // SECURITY FIX (V009): Restrict visibility of unapproved opportunities
+        if (opportunity.ApprovalStatus != ApprovalStatus.Approved)
+        {
+            bool isPrivileged = User.IsInRole("Admin") || User.IsInRole("Hod");
+            bool isOrganizer = currentUser != null && opportunity.OrganizerId == currentUser.Id;
+
+            if (!isPrivileged && !isOrganizer)
+            {
+                return Forbid();
+            }
+        }
+
         bool alreadyApplied = false;
         if (currentUser != null && currentUser.StudentProfile != null)
         {
@@ -152,6 +165,15 @@ public class OpportunitiesController : Controller
     {
         
         var opp = await _opportunityRepository.GetByIdAsync(id);
+        if (opp == null) return NotFound();
+
+        // SECURITY FIX (V010): Only pending opportunities can be approved
+        if (opp.ApprovalStatus != ApprovalStatus.PendingReview)
+        {
+            TempData["ErrorMessage"] = $"Cannot approve opportunity with status '{opp.ApprovalStatus}'. Only pending review opportunities can be approved.";
+            return RedirectToAction(nameof(PendingApprovals));
+        }
+
         if (User.IsInRole(UserRole.Hod.ToString()) && !User.IsInRole(UserRole.Admin.ToString())) {
             var user = await _userManager.GetUserAsync(User);
             var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
@@ -172,6 +194,15 @@ public class OpportunitiesController : Controller
     {
         
         var opp = await _opportunityRepository.GetByIdAsync(id);
+        if (opp == null) return NotFound();
+
+        // SECURITY FIX (V010): Prevent redundant rejection of already rejected opportunities
+        if (opp.ApprovalStatus == ApprovalStatus.Rejected)
+        {
+            TempData["ErrorMessage"] = "Opportunity is already rejected.";
+            return RedirectToAction(nameof(PendingApprovals));
+        }
+
         if (User.IsInRole(UserRole.Hod.ToString()) && !User.IsInRole(UserRole.Admin.ToString())) {
             var user = await _userManager.GetUserAsync(User);
             var facRepo = HttpContext.RequestServices.GetService<CampusConnect.Repositories.IFacultyProfileRepository>();
