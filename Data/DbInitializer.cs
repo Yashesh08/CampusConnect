@@ -171,6 +171,134 @@ public static class DbInitializer
             }
         }
 
+        // 5b. Seed HOD for Electrical Engineering
+        var hodEeEmail = "hod.ee@campusconnect.edu";
+        User? hodEe = await userManager.FindByEmailAsync(hodEeEmail);
+        if (hodEe == null)
+        {
+            hodEe = new User
+            {
+                UserName = hodEeEmail,
+                Email = hodEeEmail,
+                EmailConfirmed = true,
+                Role = UserRole.Hod,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            var hodEeResult = await userManager.CreateAsync(hodEe, defaultPassword);
+            if (hodEeResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(hodEe, UserRole.Hod.ToString());
+                if (eeDept != null)
+                {
+                    await dbContext.FacultyProfiles.AddAsync(new FacultyProfile
+                    {
+                        UserId = hodEe.Id,
+                        DepartmentId = eeDept.DepartmentId,
+                        Designation = "Head of Department - Electrical Engineering",
+                        CabinNumber = "EE-101"
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        // 5c. Seed HOD for Information Technology
+        var hodItEmail = "hod.it@campusconnect.edu";
+        User? hodIt = await userManager.FindByEmailAsync(hodItEmail);
+        if (hodIt == null)
+        {
+            hodIt = new User
+            {
+                UserName = hodItEmail,
+                Email = hodItEmail,
+                EmailConfirmed = true,
+                Role = UserRole.Hod,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            var hodItResult = await userManager.CreateAsync(hodIt, defaultPassword);
+            if (hodItResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(hodIt, UserRole.Hod.ToString());
+                if (itDept != null)
+                {
+                    await dbContext.FacultyProfiles.AddAsync(new FacultyProfile
+                    {
+                        UserId = hodIt.Id,
+                        DepartmentId = itDept.DepartmentId,
+                        Designation = "Head of Department - Information Technology",
+                        CabinNumber = "IT-101"
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        // 5d. Seed HOD for Civil Engineering
+        var hodCeEmail = "hod.ce@campusconnect.edu";
+        User? hodCe = await userManager.FindByEmailAsync(hodCeEmail);
+        if (hodCe == null)
+        {
+            hodCe = new User
+            {
+                UserName = hodCeEmail,
+                Email = hodCeEmail,
+                EmailConfirmed = true,
+                Role = UserRole.Hod,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            var hodCeResult = await userManager.CreateAsync(hodCe, defaultPassword);
+            if (hodCeResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(hodCe, UserRole.Hod.ToString());
+                if (ceDept != null)
+                {
+                    await dbContext.FacultyProfiles.AddAsync(new FacultyProfile
+                    {
+                        UserId = hodCe.Id,
+                        DepartmentId = ceDept.DepartmentId,
+                        Designation = "Head of Department - Civil Engineering",
+                        CabinNumber = "CE-101"
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        // 5e. Seed HOD for Mechanical Engineering
+        var hodMeEmail = "hod.me@campusconnect.edu";
+        User? hodMe = await userManager.FindByEmailAsync(hodMeEmail);
+        if (hodMe == null)
+        {
+            hodMe = new User
+            {
+                UserName = hodMeEmail,
+                Email = hodMeEmail,
+                EmailConfirmed = true,
+                Role = UserRole.Hod,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            var hodMeResult = await userManager.CreateAsync(hodMe, defaultPassword);
+            if (hodMeResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(hodMe, UserRole.Hod.ToString());
+                if (meDept != null)
+                {
+                    await dbContext.FacultyProfiles.AddAsync(new FacultyProfile
+                    {
+                        UserId = hodMe.Id,
+                        DepartmentId = meDept.DepartmentId,
+                        Designation = "Head of Department - Mechanical Engineering",
+                        CabinNumber = "ME-101"
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
         // 6. Seed Faculty & Students (Dev environment & Seeding)
         var faculty1Email = "faculty.smith@campusconnect.edu";
         User? faculty1 = await userManager.FindByEmailAsync(faculty1Email);
@@ -272,6 +400,72 @@ public static class DbInitializer
                         ProfileCompletionScore = 70
                     };
                     await dbContext.StudentProfiles.AddAsync(sp);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        // 6b. Seed Faculty for Electrical Engineering
+        var faculty2Email = "faculty.patel@campusconnect.edu";
+        User? faculty2 = await userManager.FindByEmailAsync(faculty2Email);
+        if (faculty2 == null)
+        {
+            faculty2 = new User
+            {
+                UserName = faculty2Email,
+                Email = faculty2Email,
+                EmailConfirmed = true,
+                Role = UserRole.Faculty,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            var f2Result = await userManager.CreateAsync(faculty2, defaultPassword);
+            if (f2Result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(faculty2, UserRole.Faculty.ToString());
+                if (eeDept != null)
+                {
+                    await dbContext.FacultyProfiles.AddAsync(new FacultyProfile
+                    {
+                        UserId = faculty2.Id,
+                        DepartmentId = eeDept.DepartmentId,
+                        Designation = "Assistant Professor",
+                        CabinNumber = "EE-204"
+                    });
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        // 6c. Seed Student for Electrical Engineering
+        var student3Email = "student.priya@campusconnect.edu";
+        User? student3 = await userManager.FindByEmailAsync(student3Email);
+        if (student3 == null)
+        {
+            student3 = new User
+            {
+                UserName = student3Email,
+                Email = student3Email,
+                EmailConfirmed = true,
+                Role = UserRole.Student,
+                Status = UserStatus.Active,
+                CreatedAt = DateTime.UtcNow
+            };
+            var s3Result = await userManager.CreateAsync(student3, defaultPassword);
+            if (s3Result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(student3, UserRole.Student.ToString());
+                if (eeDept != null)
+                {
+                    await dbContext.StudentProfiles.AddAsync(new StudentProfile
+                    {
+                        UserId = student3.Id,
+                        RollNumber = "EE202401",
+                        DepartmentId = eeDept.DepartmentId,
+                        BatchYear = 2024,
+                        Bio = "Electrical engineering student focused on renewable energy and IoT systems.",
+                        ProfileCompletionScore = 78
+                    });
                     await dbContext.SaveChangesAsync();
                 }
             }

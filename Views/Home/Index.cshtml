@@ -101,40 +101,131 @@
         </div>
         <div class="cc-card-body">
             <p class="text-muted mb-4">
-                Use any of the following pre-configured dummy user accounts for local testing. All accounts share password: <code class="text-primary fw-bold">Password123!</code>
+                Use any of the following pre-configured dummy user accounts for local testing. All accounts share password:&nbsp;<code class="text-primary fw-bold">Password123!</code>
             </p>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold">Administrator</span>
-                            <span class="cc-badge cc-badge-danger">Admin</span>
-                        </div>
-                        <code class="d-block text-dark small mb-2">admin@campusconnect.edu</code>
-                        <small class="text-muted">Full system configuration & governance access.</small>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold">Dr. John Smith</span>
-                            <span class="cc-badge cc-badge-purple">Faculty</span>
-                        </div>
-                        <code class="d-block text-dark small mb-2">faculty.smith@campusconnect.edu</code>
-                        <small class="text-muted">Associate Professor, Computer Science Dept.</small>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold">Alice Johnson</span>
-                            <span class="cc-badge cc-badge-info">Student</span>
-                        </div>
-                        <code class="d-block text-dark small mb-2">student.alice@campusconnect.edu</code>
-                        <small class="text-muted">Roll CS202401, CSE Department.</small>
-                    </div>
-                </div>
+
+            <!-- System Admin -->
+            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size:0.7rem; letter-spacing:0.08em;">
+                <i class="fa-solid fa-shield-halved me-1"></i> System Administrator
+            </h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-borderless align-middle" style="font-size:0.85rem;">
+                    <thead class="text-muted" style="font-size:0.75rem;">
+                        <tr><th>Email</th><th>Role</th><th>Department</th><th>Note</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>admin@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-danger">Admin</span></td>
+                            <td>All Departments</td>
+                            <td class="text-muted">Full system access — can approve any department's opportunities</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+
+            <!-- Department HODs -->
+            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size:0.7rem; letter-spacing:0.08em;">
+                <i class="fa-solid fa-building-columns me-1"></i> Department HODs — Approval Authority (Own Dept Only)
+            </h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-borderless align-middle" style="font-size:0.85rem;">
+                    <thead class="text-muted" style="font-size:0.75rem;">
+                        <tr><th>Email</th><th>Role</th><th>Department</th><th>Can Approve</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>hod.cse@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-warning">HOD</span></td>
+                            <td>Computer Engineering</td>
+                            <td class="text-muted">CSE opportunities only</td>
+                        </tr>
+                        <tr>
+                            <td><code>hod.ee@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-warning">HOD</span></td>
+                            <td>Electrical Engineering</td>
+                            <td class="text-muted">EE opportunities only</td>
+                        </tr>
+                        <tr>
+                            <td><code>hod.it@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-warning">HOD</span></td>
+                            <td>Information Technology</td>
+                            <td class="text-muted">IT opportunities only</td>
+                        </tr>
+                        <tr>
+                            <td><code>hod.ce@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-warning">HOD</span></td>
+                            <td>Civil Engineering</td>
+                            <td class="text-muted">CE opportunities only</td>
+                        </tr>
+                        <tr>
+                            <td><code>hod.me@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-warning">HOD</span></td>
+                            <td>Mechanical Engineering</td>
+                            <td class="text-muted">ME opportunities only (try approving Opp 5!)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Faculty -->
+            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size:0.7rem; letter-spacing:0.08em;">
+                <i class="fa-solid fa-chalkboard-user me-1"></i> Faculty (Organizers)
+            </h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-borderless align-middle" style="font-size:0.85rem;">
+                    <thead class="text-muted" style="font-size:0.75rem;">
+                        <tr><th>Email</th><th>Role</th><th>Department</th><th>Note</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>faculty.smith@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-purple">Faculty</span></td>
+                            <td>Computer Engineering</td>
+                            <td class="text-muted">Owns all 5 seeded opportunities (Organizer)</td>
+                        </tr>
+                        <tr>
+                            <td><code>faculty.patel@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-purple">Faculty</span></td>
+                            <td>Electrical Engineering</td>
+                            <td class="text-muted">EE Faculty — can post new opportunities</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Students -->
+            <h6 class="text-uppercase text-muted fw-bold mb-2" style="font-size:0.7rem; letter-spacing:0.08em;">
+                <i class="fa-solid fa-graduation-cap me-1"></i> Students (Applicants)
+            </h6>
+            <div class="table-responsive mb-0">
+                <table class="table table-sm table-borderless align-middle mb-0" style="font-size:0.85rem;">
+                    <thead class="text-muted" style="font-size:0.75rem;">
+                        <tr><th>Email</th><th>Role</th><th>Roll No.</th><th>Department</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>student.alice@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-info">Student</span></td>
+                            <td>CS202401</td>
+                            <td>Computer Engineering</td>
+                        </tr>
+                        <tr>
+                            <td><code>student.bob@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-info">Student</span></td>
+                            <td>CS202402</td>
+                            <td>Computer Engineering</td>
+                        </tr>
+                        <tr>
+                            <td><code>student.priya@campusconnect.edu</code></td>
+                            <td><span class="cc-badge cc-badge-info">Student</span></td>
+                            <td>EE202401</td>
+                            <td>Electrical Engineering</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 }
